@@ -1,6 +1,6 @@
-public class LinkedList {
-    Node<T> head ; 
-    Node<T> current;
+public class LinkedList<T> {
+    private Node<T> head ; 
+   private Node<T> current;
  public LinkedList () {
     head = current = null ;
  }
@@ -10,6 +10,9 @@ public class LinkedList {
 
  public boolean last() {
     return current.next==null ;
+ }
+ public boolean full(){
+   return false;
  }
 public void findFirst(){
  current=head ;   

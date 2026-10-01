@@ -28,5 +28,19 @@ public void update(T val){
 
 current.data=val;
 }
+//end of part1
+public void insert(T val){
+     Node<T>tmp;
 
+     if(empty()){
+         current=head=new Node<T>(val);
+     }
+     else{
+         tmp=current.next;
+         current.next=new Node<T>(val);
+         current=current.next;
+         current.next=tmp;
+     }
 }
+
+}//end of class linkedlist

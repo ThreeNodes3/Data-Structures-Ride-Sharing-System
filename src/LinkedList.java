@@ -42,5 +42,27 @@ public void insert(T val){
          current.next=tmp;
      }
 }
+public void remove() {
 
+    if (current == head) {
+        head = head.next;
+        current = head;
+    }
+    else {
+        Node<T> tmp = head;
+
+        while (tmp.next != current) {
+            tmp = tmp.next;
+        }
+
+        tmp.next = current.next;
+
+        if (current.next != null) {
+            current = current.next;
+        }
+        else {
+            current = head;
+        }
+    }
+}
 }//end of class linkedlist

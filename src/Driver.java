@@ -5,16 +5,11 @@ public class Driver extends Person implements IDriver {
 
 public Driver (int driverId, String name , String phoneNumber, String vehiclePlate, VehicleType vehicleType ){
 
-super(name, phoneNumber);
-this.driverId=driverId;
+super(driverId,name, phoneNumber);
 setVehiclePlate(vehiclePlate);
 setVehicleType(vehicleType);
 }
 
-public int getId() {
-return driverId;
-
-}
 
 public String getVehiclePlate(){
 return vehiclePlate;
@@ -60,11 +55,11 @@ public  void setVehicleType(VehicleType vehicleType){
 }
 
 public int compareTo(IDriver other){
-    if (driverId < other.getId()){
+    if (getId() < other.getId()){
         return -1 ; 
     }
     else 
-        if( driverId > other.getId()){
+        if( getId() > other.getId()){
             return 1;
         }
         else 
@@ -73,7 +68,7 @@ public int compareTo(IDriver other){
 
 
 public String toString(){
-return "Driver ID: "+driverId+" Name: "+getName()+" Phone Number: "+getPhoneNumber()+" Vehicle Plate: "+vehiclePlate+" Vehicle Type: "+ vehicleType;
+return "Driver ID: "+getId()+" Name: "+getName()+" Phone Number: "+getPhoneNumber()+" Vehicle Plate: "+vehiclePlate+" Vehicle Type: "+ vehicleType;
 
 }
 

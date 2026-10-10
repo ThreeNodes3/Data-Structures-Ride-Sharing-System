@@ -1,3 +1,6 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+
 public class RideSharingSystem implements IRideSharingSystem {
 
     private IRiderList riders;
@@ -246,4 +249,138 @@ private IDateTime parseRideDateTime(String value) {
 
     return new DateTime(year, month, day, hour, minute);
 }
+//part2
+@Override
+public boolean loadRidersFromCSV(String ridersFilePath) {
+
+    try {
+        BufferedReader reader =
+                new BufferedReader(new FileReader(ridersFilePath));
+
+        String line;
+
+        while ((line = reader.readLine()) != null) {
+
+            int comma1 = line.indexOf(',');
+            String riderIdText = line.substring(0, comma1);
+            line = line.substring(comma1 + 1);
+
+            int comma2 = line.indexOf(',');
+            String name = line.substring(0, comma2);
+            line = line.substring(comma2 + 1);
+
+            int comma3 = line.indexOf(',');
+            String email = line.substring(0, comma3);
+            line = line.substring(comma3 + 1);
+
+            int comma4 = line.indexOf(',');
+            String phoneNumber = line.substring(0, comma4);
+
+            String homeCity = line.substring(comma4 + 1);
+
+            int riderId = Integer.parseInt(riderIdText);
+
+            Rider rider = new Rider(
+                    riderId,
+                    name,
+                    phoneNumber,
+                    email,
+                    homeCity
+            );
+
+            if (!addRider(rider)) {
+                reader.close();
+                return false;
+            }
+        }
+
+        reader.close();
+        return true;
+
+    } catch (Exception e) {
+        return false;
+    }
+}//end csv
+@Override
+
+    public boolean addRider(IRider rider){
+        return riders.add(rider);
+}
+
+    @Override
+    public IRider searchRiderById(int riderId) {
+        return riders.findById(riderId);
+    }
+
+    @Override
+    public IRider searchRiderByEmail(String email){
+
+        return riders.findByEmail(email);
+    }
+
+    @Override
+    public LinkedList<IRider>searchRidersByName(String fullName){
+        return riders.findByName(fullName);
+    }
+    @Override
+    public LinkedList<IRider>searchRidersByHomeCity(String homeCity){
+        return riders.findByHomeCity(homeCity);
+    }
+    @Override
+    public LinkedList<IRider>getALLRiders(){
+        return riders.getAll();
+
+    }
+
+    //remove method
+
+    @Override
+    public boolean removeRider(int riderId) {
+
+        IRider rider = riders.findById(riderId);
+
+        if (rider == null) {
+            return false;
+        }
+
+        LinkedList<IRide> allRides = rides.getAllAlphabetically();
+
+        if (!allRides.empty()) {
+
+            allRides.findFirst();
+
+            while (true) {
+
+                IRide ride = allRides.retrieve();
+
+                if (ride.hasRider(riderId)) {
+
+                    if (ride instanceof IPrivateRide) {
+
+                        rides.removeRideById(ride.getRideId());
+                    }
+
+                    else if (ride instanceof ISharedRide) {
+
+                        ISharedRide sharedRide = (ISharedRide) ride;
+
+                        sharedRide.removeParticipantById(riderId);
+
+                        if (sharedRide.isEmpty()) {
+                            rides.removeRideById(ride.getRideId());
+                        }
+                    }//end while
+                }//end
+
+                if (allRides.last()) {
+                    break;
+                }
+
+                allRides.findNext();
+            }
+        }
+
+        return riders.removeById(riderId);
+    }
+
 }

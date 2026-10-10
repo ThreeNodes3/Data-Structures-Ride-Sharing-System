@@ -301,40 +301,40 @@ public boolean loadRidersFromCSV(String ridersFilePath) {
         return false;
     }
 }//end csv
-@Override
 
+@Override
     public boolean addRider(IRider rider){
         return riders.add(rider);
 }
 
-    @Override
+@Override   
     public IRider searchRiderById(int riderId) {
         return riders.findById(riderId);
     }
 
-    @Override
+ @Override  
     public IRider searchRiderByEmail(String email){
 
         return riders.findByEmail(email);
     }
 
-    @Override
+ @Override  
     public LinkedList<IRider>searchRidersByName(String fullName){
         return riders.findByName(fullName);
     }
-    @Override
+ @Override  
     public LinkedList<IRider>searchRidersByHomeCity(String homeCity){
         return riders.findByHomeCity(homeCity);
     }
-    @Override
-    public LinkedList<IRider>getALLRiders(){
+ @Override 
+    public LinkedList<IRider>getAllRiders(){
         return riders.getAll();
 
     }
 
     //remove method
 
-    @Override
+  @Override 
     public boolean removeRider(int riderId) {
 
         IRider rider = riders.findById(riderId);
@@ -382,5 +382,107 @@ public boolean loadRidersFromCSV(String ridersFilePath) {
 
         return riders.removeById(riderId);
     }
+    @Override
+ public boolean loadDriversFromCSV(String driversFilePath) {
+        if (driversFilePath == null) {
+            return false;
+        }
 
+        
+        try (BufferedReader reader = new BufferedReader(new FileReader(driversFilePath))) {
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                if (line.trim().isEmpty()) {
+                    continue;
+                } 
+                 String[] data = line.split(",", -1);
+                if (data.length != 5) {
+                    return false;
+                }
+
+                for (int i = 0; i < data.length; i++) {
+                    data[i] = data[i].trim();
+                    if (data[i].isEmpty()) {
+                        return false;
+                    }
+                }
+
+                int driverId = Integer.parseInt(data[0]);
+                VehicleType vehicleType = VehicleType.valueOf(data[4]);
+                Driver driver = new Driver(driverId, data[1], data[2], data[3], vehicleType);
+
+                if (!addDriver(driver)) {
+                    return false;
+                }
+            }
+                return true;
+        } catch (java.io.IOException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+  @Override  
+    public boolean addDriver(IDriver driver) {
+        return drivers.add(driver);
+    }
+
+ @Override  
+    public IDriver searchDriverById(int driverId) {
+        return drivers.findById(driverId);
+    }
+ @Override   
+    public IDriver searchDriverByVehiclePlate(String vehiclePlate) {
+        return drivers.findByVehiclePlate(vehiclePlate);
+    }
+@Override 
+    public LinkedList<IDriver> searchDriversByVehicleType(VehicleType vehicleType) {
+        return drivers.findByVehicleType(vehicleType);
+    }
+
+@Override    
+    public LinkedList<IDriver> getAllDrivers() {
+        return drivers.getAll();
+    }
+
+  @Override 
+    public boolean removeDriver(int driverId) {
+        if (drivers.findById(driverId) == null) {
+            return false;
+        }
+       LinkedList<IRide> allRides = rides.getAllAlphabetically();
+        LinkedList<Integer> rideIdsToRemove = new LinkedList<Integer>();
+
+        
+        if (!allRides.empty()) {
+            allRides.findFirst();
+
+            while (true) {
+                IRide ride = allRides.retrieve();
+                if (ride.getDriver().getId() == driverId) {
+                    rideIdsToRemove.insert(ride.getRideId()); 
+    }  
+    if (allRides.last()) {
+                    break;
+                }
+                allRides.findNext();
+            }
+        }
+
+        if (!rideIdsToRemove.empty()) {
+            rideIdsToRemove.findFirst();
+
+            while (true) {
+                rides.removeRideById(rideIdsToRemove.retrieve());
+
+                if (rideIdsToRemove.last()) {
+                    break;
+                }
+                rideIdsToRemove.findNext();
+            }
+        }
+
+        return drivers.removeById(driverId);
+    }
 }
+ 

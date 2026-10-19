@@ -1,9 +1,9 @@
 public abstract class Ride implements IRide {
 
-    private int rideId;
+    private final int rideId;
     private String pickupLocation;
-    private IDateTime pickupTime;
-    private IDateTime dropoffTime;
+    private final IDateTime pickupTime;
+    private final IDateTime dropoffTime;
     private String dropoffLocation;
     private IDriver driver;
 
@@ -68,15 +68,16 @@ public abstract class Ride implements IRide {
 
     @Override
     public int compareTo(IRide other) {
-        return this.pickupLocation.compareTo(other.getPickupLocation());
+        return this.pickupLocation.compareToIgnoreCase(other.getPickupLocation());
     }
+
     @Override
-public String toString() {
-    return "Ride ID: " + rideId
-            + ", Pickup Location: " + pickupLocation
-            + ", Pickup Time: " + pickupTime
-            + ", Drop-off Location: " + dropoffLocation
-            + ", Drop-off Time: " + dropoffTime
-            + ", Driver: " + driver;
-}
+    public String toString() {
+        return "Ride ID: " + rideId
+                + ", Pickup Location: " + pickupLocation
+                + ", Pickup Time: " + pickupTime
+                + ", Drop-off Location: " + dropoffLocation
+                + ", Drop-off Time: " + dropoffTime
+                + ", Driver: " + driver;
+    }
 }

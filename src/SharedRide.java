@@ -97,4 +97,21 @@ public class SharedRide extends Ride implements ISharedRide {
     public boolean isEmpty() {
         return participants.empty();
     }
+  @Override
+public String toString() {
+    String riderIDs = "";
+
+    if (!Participants.empty()) {
+        Participants.findFirst();
+
+        while (!Participants.last()) {
+            riderIDs += Participants.retrieve().getId() + ";";
+            Participants.findNext();
+        }
+
+        riderIDs += Participants.retrieve().getId();
+    }
+
+    return "SHARED," + super.toString() + "," + riderIDs;
+}  
 }

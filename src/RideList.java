@@ -11,10 +11,9 @@ public class RideList implements IRideList {
     @Override
     public boolean addRide(IRide ride) {
 
-        if (ride == null) {
-            return false;
-        }
-
+       if (ride == null|| ride.getPickupLocation() == null|| ride.getPickupLocation().trim().isEmpty()) {
+    return false;
+}
         // Ride IDs must be unique
         if (!rides.empty()) {
             rides.findFirst();
@@ -120,9 +119,9 @@ public LinkedList<IRide> getAllAlphabetically() {
 
         LinkedList<IRide> result = new LinkedList<IRide>();
 
-        if (rides.empty()) {
-            return result;
-        }
+       if (rides.empty() || pickupLocation == null) {
+    return result;
+}
 
         rides.findFirst();
 
@@ -130,7 +129,7 @@ public LinkedList<IRide> getAllAlphabetically() {
 
             IRide ride = rides.retrieve();
 
-            if (ride.getPickupLocation().equals(pickupLocation)) {
+            if(pickupLocation.equals(ride.getPickupLocation()))  {
 
                 if (result.empty()) {
                     result.insert(ride);
@@ -161,9 +160,9 @@ public LinkedList<IRide> getAllAlphabetically() {
 
         LinkedList<IRide> result = new LinkedList<IRide>();
 
-        if (rides.empty()) {
-            return result;
-        }
+        if (rides.empty() || riderFullName == null) {
+         return result;
+}
 
         rides.findFirst();
 
@@ -178,11 +177,10 @@ public LinkedList<IRide> getAllAlphabetically() {
                 IPrivateRide privateRide = (IPrivateRide) ride;
                 IRider rider = privateRide.getRider();
 
-                if (rider != null &&
-                    rider.getName().equals(riderFullName)) {
+               if (rider != null && riderFullName.equals(rider.getName())) {
 
-                    found = true;
-                }
+            found = true;
+             }
             }
 
             // Shared ride

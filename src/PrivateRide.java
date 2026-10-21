@@ -7,7 +7,10 @@ public class PrivateRide extends Ride implements IPrivateRide {
                        IDriver driver, IRider rider) {
 
         super(rideId, pickupLocation, pickupTime, dropoffTime, dropoffLocation, driver);
-        this.rider = rider;
+        if (rider == null) {
+    throw new IllegalArgumentException("A private ride must have exactly one rider.");
+}
+this.rider = rider;
     }
 
     @Override
@@ -16,9 +19,12 @@ public class PrivateRide extends Ride implements IPrivateRide {
     }
 
     @Override
-    public void setRider(IRider rider) {
-        this.rider = rider;
+public void setRider(IRider rider) {
+    if (rider == null) {
+        throw new IllegalArgumentException("A private ride must have exactly one rider.");
     }
+    this.rider = rider;
+}
 
     @Override
     public boolean hasRider(int riderId) {

@@ -83,24 +83,195 @@ public class Main {
 
                     // Ride
                     case 8:
-                        // TODO
-                        break;
+    LinkedList<IRide> allRides = system.getAllRidesAlphabetically();
+
+    if (allRides.empty()) {
+        System.out.println("No rides found.");
+    } else {
+        allRides.findFirst();
+
+        while (true) {
+            System.out.println(allRides.retrieve());
+
+            if (allRides.last()) {
+                break;
+            }
+
+            allRides.findNext();
+        }
+    }
+    break;
 
                     case 9:
-                        // TODO
-                        break;
+    System.out.print("Enter pickup location: ");
+    String pickupLocation = input.nextLine();
+
+    LinkedList<IRide> matchingRides =
+            system.searchRidesByPickupLocation(pickupLocation);
+
+    if (matchingRides.empty()) {
+        System.out.println("No rides found.");
+    } else {
+        matchingRides.findFirst();
+
+        while (true) {
+            System.out.println(matchingRides.retrieve());
+
+            if (matchingRides.last()) {
+                break;
+            }
+
+            matchingRides.findNext();
+        }
+    }
+    break;
 
                     case 10:
-                        // TODO
-                        break;
+    System.out.print("Enter rider name: ");
+    String riderName = input.nextLine();
+
+    LinkedList<IRide> riderRides =
+            system.searchRidesByRiderName(riderName);
+
+    if (riderRides.empty()) {
+        System.out.println("No rides found.");
+    } else {
+        riderRides.findFirst();
+
+        while (true) {
+            System.out.println(riderRides.retrieve());
+
+            if (riderRides.last()) {
+                break;
+            }
+
+            riderRides.findNext();
+        }
+    }
+    break;
 
                     case 11:
-                        // TODO
-                        break;
+    System.out.print("Enter pickup location: ");
+    String sharedLocation = input.nextLine();
+
+    LinkedList<IRider> participants =
+            system.getSharedRideParticipants(sharedLocation);
+
+    if (participants == null || participants.empty()) {
+        System.out.println("No participants found.");
+    } else {
+        participants.findFirst();
+
+        while (true) {
+            System.out.println(participants.retrieve());
+
+            if (participants.last()) {
+                break;
+            }
+
+            participants.findNext();
+        }
+    }
+    break;
 
                     case 12:
-                        // TODO
-                        break;
+    System.out.println("Choose ride type:");
+    System.out.println("1. Private Ride");
+    System.out.println("2. Shared Ride");
+    System.out.print("Enter ride type: ");
+
+    int rideType = input.nextInt();
+    input.nextLine();
+
+    if (rideType == 1 || rideType == 2) {
+
+        System.out.print("Enter pickup location: ");
+        String pickup = input.nextLine();
+
+        System.out.print("Enter dropoff location: ");
+        String dropoff = input.nextLine();
+
+        System.out.print("Enter pickup year: ");
+        int pickupYear = input.nextInt();
+
+        System.out.print("Enter pickup month: ");
+        int pickupMonth = input.nextInt();
+
+        System.out.print("Enter pickup day: ");
+        int pickupDay = input.nextInt();
+
+        System.out.print("Enter pickup hour: ");
+        int pickupHour = input.nextInt();
+
+        System.out.print("Enter pickup minute: ");
+        int pickupMinute = input.nextInt();
+
+        System.out.print("Enter dropoff year: ");
+        int dropoffYear = input.nextInt();
+
+        System.out.print("Enter dropoff month: ");
+        int dropoffMonth = input.nextInt();
+
+        System.out.print("Enter dropoff day: ");
+        int dropoffDay = input.nextInt();
+
+        System.out.print("Enter dropoff hour: ");
+        int dropoffHour = input.nextInt();
+
+        System.out.print("Enter dropoff minute: ");
+        int dropoffMinute = input.nextInt();
+
+        IDateTime pickupTime = new DateTime(
+                pickupYear, pickupMonth, pickupDay,
+                pickupHour, pickupMinute);
+
+        IDateTime dropoffTime = new DateTime(
+                dropoffYear, dropoffMonth, dropoffDay,
+                dropoffHour, dropoffMinute);
+
+        System.out.print("Enter driver ID: ");
+        int driverId = input.nextInt();
+
+        boolean success = false;
+
+        if (rideType == 1) {
+
+            System.out.print("Enter rider ID: ");
+            int riderId = input.nextInt();
+
+            success = system.schedulePrivateRide(
+                    pickup, pickupTime, dropoffTime,
+                    dropoff, riderId, driverId);
+
+        } else {
+
+            System.out.print("Enter number of riders: ");
+            int count = input.nextInt();
+
+            if (count > 0) {
+                int[] riderIds = new int[count];
+
+                for (int i = 0; i < count; i++) {
+                    System.out.print("Enter rider ID " + (i + 1) + ": ");
+                    riderIds[i] = input.nextInt();
+                }
+
+                success = system.scheduleSharedRide(
+                        pickup, pickupTime, dropoffTime,
+                        dropoff, riderIds, driverId);
+            }
+        }
+
+        if (success) {
+            System.out.println("Ride scheduled successfully.");
+        } else {
+            System.out.println("Failed to schedule ride.");
+        }
+
+    } else {
+        System.out.println("Invalid ride type.");
+    }
+    break;
 
                     case 0:
                         System.out.println("Exiting...");

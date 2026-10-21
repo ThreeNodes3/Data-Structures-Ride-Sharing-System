@@ -93,9 +93,27 @@ public class RideList implements IRideList {
     }
 
     @Override
-    public LinkedList<IRide> getAllAlphabetically() {
-        return rides;
+public LinkedList<IRide> getAllAlphabetically() {
+    LinkedList<IRide> result = new LinkedList<IRide>();
+
+    if (rides.empty()) {
+        return result;
     }
+
+    rides.findFirst();
+
+    while (true) {
+        result.insert(rides.retrieve());
+
+        if (rides.last()) {
+            break;
+        }
+
+        rides.findNext();
+    }
+
+    return result;
+}
 
     @Override
     public LinkedList<IRide> findByPickupLocation(String pickupLocation) {

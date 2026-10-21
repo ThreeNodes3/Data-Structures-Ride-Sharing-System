@@ -68,18 +68,76 @@ public class Main {
                         // TODO
                         break;
 
-                    // Driver
-                    case 5:
-                        // TODO
-                        break;
+                  // Driver
+case 5: {
+    LinkedList<IDriver> allDrivers = system.getAllDrivers();
+    printDrivers(allDrivers);
+    break;
+}
 
-                    case 6:
-                        // TODO
-                        break;
+case 6: {
+    System.out.print(
+            "Enter vehicle type (SEDAN, LUXURY_SEDAN, SUV, VAN): ");
 
-                    case 7:
-                        // TODO
-                        break;
+    try {
+        VehicleType vehicleType = VehicleType.valueOf(
+                input.nextLine().trim().toUpperCase());
+
+        LinkedList<IDriver> matchingDrivers =
+                system.searchDriversByVehicleType(vehicleType);
+
+        printDrivers(matchingDrivers);
+
+    } catch (IllegalArgumentException e) {
+        System.out.println(
+                "Invalid vehicle type. Use SEDAN, LUXURY_SEDAN, SUV, or VAN.");
+    }
+
+    break;
+}
+
+case 7: {
+    try {
+        System.out.print("Enter driver ID: ");
+        int newDriverId = Integer.parseInt(input.nextLine().trim());
+
+        System.out.print("Enter full name: ");
+        String driverName = input.nextLine().trim();
+
+        System.out.print("Enter phone number (10 digits): ");
+        String phoneNumber = input.nextLine().trim();
+
+        System.out.print("Enter vehicle plate (example: ABC1234): ");
+        String vehiclePlate = input.nextLine().trim();
+
+        System.out.print(
+                "Enter vehicle type (SEDAN, LUXURY_SEDAN, SUV, VAN): ");
+
+        VehicleType vehicleType = VehicleType.valueOf(
+                input.nextLine().trim().toUpperCase());
+
+        Driver newDriver = new Driver(
+                newDriverId, driverName, phoneNumber,
+                vehiclePlate, vehicleType);
+
+        boolean added = system.addDriver(newDriver);
+
+        if (added) {
+            System.out.println("Driver added successfully.");
+        } else {
+            System.out.println(
+                    "Failed to add driver: duplicate ID, duplicate plate, or invalid data.");
+        }
+
+    } catch (NumberFormatException e) {
+        System.out.println("Invalid driver ID. Enter a whole number.");
+
+    } catch (IllegalArgumentException e) {
+        System.out.println("Failed to add driver: " + e.getMessage());
+    }
+
+    break;
+}
 
                     // Ride
                     case 8:
@@ -285,4 +343,22 @@ public class Main {
 
             input.close();
         }
+        private static void printDrivers(LinkedList<IDriver> driverResults) {
+    if (driverResults.empty()) {
+        System.out.println("No drivers found.");
+        return;
+    }
+
+    driverResults.findFirst();
+
+    while (true) {
+        System.out.println(driverResults.retrieve().toString());
+
+        if (driverResults.last()) {
+            break;
+        }
+
+        driverResults.findNext();
+    }
+}
     }

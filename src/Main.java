@@ -52,22 +52,120 @@ public class Main {
                 switch (choice) {
 
                     // Rider
-                    case 1:
-                        // TODO
-                        break;
+                    case 1: {
+                        LinkedList<IRider> allRiders = system.getAllRiders();
 
-                    case 2:
-                        // TODO
-                        break;
+                        if (allRiders.empty()) {
+                            System.out.println("No riders found.");
+                        } else {
+                            allRiders.findFirst();
 
-                    case 3:
-                        // TODO
-                        break;
+                            while (true) {
+                                System.out.println(allRiders.retrieve());
 
-                    case 4:
-                        // TODO
-                        break;
+                                if (allRiders.last()) {
+                                    break;
+                                }
 
+                                allRiders.findNext();
+                            }
+                        }
+
+                        break;
+                    }
+                    case 2: {
+                        System.out.print("Enter home city: ");
+                        String homeCity = input.nextLine();
+
+                        LinkedList<IRider> matchingRiders =
+                                system.searchRidersByHomeCity(homeCity);
+
+                        if (matchingRiders.empty()) {
+                            System.out.println("No riders found.");
+                        } else {
+                            matchingRiders.findFirst();
+
+                            while (true) {
+                                System.out.println(matchingRiders.retrieve());
+
+                                if (matchingRiders.last()) {
+                                    break;
+                                }
+
+                                matchingRiders.findNext();
+                            }
+                        }
+
+                        break;
+                    }
+                    case 3: {
+                        System.out.print("Enter rider name: ");
+                        String riderName = input.nextLine();
+
+                        LinkedList<IRider> matchingRiders =
+                                system.searchRidersByName(riderName);
+
+                        if (matchingRiders.empty()) {
+                            System.out.println("No riders found.");
+                        } else {
+                            matchingRiders.findFirst();
+
+                            while (true) {
+                                System.out.println(matchingRiders.retrieve());
+
+                                if (matchingRiders.last()) {
+                                    break;
+                                }
+
+                                matchingRiders.findNext();
+                            }
+                        }
+
+                        break;
+                    }
+                    case 4: {
+                        try {
+                            System.out.print("Enter rider ID: ");
+                            int riderId = Integer.parseInt(input.nextLine().trim());
+
+                            System.out.print("Enter full name: ");
+                            String riderName = input.nextLine().trim();
+
+                            System.out.print("Enter phone number (10 digits): ");
+                            String phoneNumber = input.nextLine().trim();
+
+                            System.out.print("Enter email: ");
+                            String email = input.nextLine().trim();
+
+                            System.out.print("Enter home city: ");
+                            String homeCity = input.nextLine().trim();
+
+                            Rider newRider = new Rider(
+                                    riderId,
+                                    riderName,
+                                    phoneNumber,
+                                    email,
+                                    homeCity
+                            );
+
+                            boolean added = system.addRider(newRider);
+
+                            if (added) {
+                                System.out.println("Rider added successfully.");
+                            } else {
+                                System.out.println(
+                                        "Failed to add rider: duplicate ID, duplicate email, or invalid data.");
+                            }
+
+                        } catch (NumberFormatException e) {
+                            System.out.println("Invalid rider ID. Enter a whole number.");
+
+                        } catch (IllegalArgumentException e) {
+                            System.out.println("Failed to add rider: " + e.getMessage());
+                        }
+
+                        break;
+                    }
                   // Driver
 case 5: {
     LinkedList<IDriver> allDrivers = system.getAllDrivers();

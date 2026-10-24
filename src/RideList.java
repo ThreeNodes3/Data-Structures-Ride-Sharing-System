@@ -196,12 +196,13 @@ public LinkedList<IRide> getAllAlphabetically() {
 
                     while (true) {
 
-                        if (participants.retrieve().getName()
-                                .equals(riderFullName)) {
+                        IRider participant = participants.retrieve();
 
-                            found = true;
-                            break;
-                        }
+           if (participant != null && riderFullName.equals(participant.getName())) {
+
+                 found = true;
+                  break;
+                   }
 
                         if (participants.last()) {
                             break;

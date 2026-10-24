@@ -39,10 +39,9 @@ public class Rider extends Person implements IRider{
                 return 0;
     }
 
-    public String toString() {
-        return "Rider{" +
-                "email='" + email + '\'' +
-                ", homeCity='" + homeCity + '\'' +
-                '}';
-    }
+ @Override
+public String toString() {
+    return getId() + "," + getName() + "," + getEmail()
+            + "," + getPhoneNumber() + "," + getHomeCity();
+}
 }

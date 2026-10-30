@@ -1,7 +1,7 @@
 public class Driver extends Person implements IDriver {
     private String vehiclePlate;
     private VehicleType vehicleType;
-    private LinkedList<IRide> rideHistory = new LinkedList<>();
+    
     
 
 public Driver (int driverId, String name , String phoneNumber, String vehiclePlate, VehicleType vehicleType ){
@@ -72,10 +72,7 @@ public String toString(){
 return "Driver ID: "+getId()+" Name: "+getName()+" Phone Number: "+getPhoneNumber()+" Vehicle Plate: "+vehiclePlate+" Vehicle Type: "+ vehicleType;
 
 }
-@Override
-public LinkedList<IRide> getRideHistory() {
-    return rideHistory;
-}
+
 
 
 }

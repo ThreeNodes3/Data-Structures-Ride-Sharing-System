@@ -2,7 +2,7 @@ public class Rider extends Person implements IRider{
 
     private String email;
     private  String homeCity;
-    private LinkedList<IRide> rideHistory = new LinkedList<>();
+    
 
     public Rider(int riderid, String name, String phoneNumber, String email, String homeCity) {
         super(riderid, name, phoneNumber);
@@ -45,8 +45,5 @@ public String toString() {
     return getId() + "," + getName() + "," + getEmail()
             + "," + getPhoneNumber() + "," + getHomeCity();
 }
-@Override
-public LinkedList<IRide> getRideHistory() {
-    return rideHistory;
-}
+
 }

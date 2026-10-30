@@ -377,14 +377,22 @@ case 7: {
         System.out.print("Enter dropoff minute: ");
         int dropoffMinute = input.nextInt();
 
-        IDateTime pickupTime = new DateTime(
-                pickupYear, pickupMonth, pickupDay,
-                pickupHour, pickupMinute);
+        IDateTime pickupTime;
+IDateTime dropoffTime;
 
-        IDateTime dropoffTime = new DateTime(
-                dropoffYear, dropoffMonth, dropoffDay,
-                dropoffHour, dropoffMinute);
+try {
+    pickupTime = new DateTime(
+            pickupYear, pickupMonth, pickupDay,
+            pickupHour, pickupMinute);
 
+    dropoffTime = new DateTime(
+            dropoffYear, dropoffMonth, dropoffDay,
+            dropoffHour, dropoffMinute);
+
+} catch (IllegalArgumentException e) {
+    System.out.println("Invalid date: " + e.getMessage());
+    break; 
+}
         System.out.print("Enter driver ID: ");
         int driverId = input.nextInt();
 

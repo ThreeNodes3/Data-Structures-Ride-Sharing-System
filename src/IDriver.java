@@ -34,4 +34,5 @@ public interface IDriver extends IPerson, Comparable<IDriver> {
      */
     @Override
     int compareTo(IDriver other);
+    LinkedList<IRide> getRideHistory();
 }

@@ -406,8 +406,8 @@ public class RideSharingSystem implements IRideSharingSystem {
             return false;
         }
 
-        LinkedList<IRide> allRides =
-                rides.getAllAlphabetically();
+        LinkedList<IRide> allRides = rides.getAllAlphabetically();
+        LinkedList<Integer> rideIdsToRemove = new LinkedList<Integer>();
 
         if (!allRides.empty()) {
 
@@ -419,26 +419,57 @@ public class RideSharingSystem implements IRideSharingSystem {
 
                 if (ride.hasRider(riderId)) {
 
+                    // PRIVATE RIDE
                     if (ride instanceof IPrivateRide) {
 
-    removeFromHistory(ride.getDriver().getRideHistory(), ride.getRideId());
-    removeFromHistory(rider.getRideHistory(), ride.getRideId());
-
-    rides.removeRideById(ride.getRideId());
-}else if (ride instanceof ISharedRide) {
-
-                        ISharedRide sharedRide =
-                                (ISharedRide) ride;
-removeFromHistory(rider.getRideHistory(), ride.getRideId());
-                        sharedRide.removeParticipantById(
-                                riderId
+                        removeFromHistory(
+                                ride.getDriver().getRideHistory(),
+                                ride.getRideId()
                         );
 
-                        if (sharedRide.isEmpty()) {
-                            removeFromHistory(ride.getDriver().getRideHistory(), ride.getRideId());
-                            rides.removeRideById(
-                                
+                        removeFromHistory(
+                                rider.getRideHistory(),
+                                ride.getRideId()
+                        );
+
+                        rideIdsToRemove.insert(ride.getRideId());
+                    }
+
+                    // SHARED RIDE
+                    else if (ride instanceof ISharedRide) {
+
+                        ISharedRide sharedRide = (ISharedRide) ride;
+
+                        removeFromHistory(
+                                rider.getRideHistory(),
+                                ride.getRideId()
+                        );
+
+                        LinkedList<IRider> participants =
+                                sharedRide.getParticipants();
+
+                        boolean onlyOneParticipant = false;
+
+                        if (!participants.empty()) {
+                            participants.findFirst();
+                            onlyOneParticipant = participants.last();
+                        }
+
+                        if (onlyOneParticipant) {
+
+                            removeFromHistory(
+                                    ride.getDriver().getRideHistory(),
                                     ride.getRideId()
+                            );
+
+                            rideIdsToRemove.insert(
+                                    ride.getRideId()
+                            );
+
+                        } else {
+
+                            sharedRide.removeParticipantById(
+                                    riderId
                             );
                         }
                     }
@@ -449,6 +480,25 @@ removeFromHistory(rider.getRideHistory(), ride.getRideId());
                 }
 
                 allRides.findNext();
+            }
+        }
+
+        // Remove rides AFTER finishing traversal
+        if (!rideIdsToRemove.empty()) {
+
+            rideIdsToRemove.findFirst();
+
+            while (true) {
+
+                rides.removeRideById(
+                        rideIdsToRemove.retrieve()
+                );
+
+                if (rideIdsToRemove.last()) {
+                    break;
+                }
+
+                rideIdsToRemove.findNext();
             }
         }
 

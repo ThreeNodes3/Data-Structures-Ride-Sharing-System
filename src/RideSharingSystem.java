@@ -7,12 +7,14 @@ public class RideSharingSystem implements IRideSharingSystem {
     private IDriverList drivers;
     private IRideList rides;
     private int nextRideId;
+    private LinkedList<IRider> ridersAlphabetically;
 
     public RideSharingSystem() {
         riders = new RiderList();
         drivers = new DriverList();
         rides = new RideList();
         nextRideId = 1;
+        ridersAlphabetically = new LinkedList<IRider>();
     }
 
     @Override
@@ -369,7 +371,53 @@ public class RideSharingSystem implements IRideSharingSystem {
 
     @Override
     public boolean addRider(IRider rider) {
-        return riders.add(rider);
+
+        if (!riders.add(rider)) {
+            return false;
+        }
+
+        addRiderAlphabetically(rider);
+        return true;
+    }
+
+    private void addRiderAlphabetically(IRider rider) {
+
+        LinkedList<IRider> newList = new LinkedList<IRider>();
+
+        if (ridersAlphabetically.empty()) {
+            newList.insert(rider);
+            ridersAlphabetically = newList;
+            return;
+        }
+
+        ridersAlphabetically.findFirst();
+        boolean inserted = false;
+
+        while (true) {
+
+            IRider current = ridersAlphabetically.retrieve();
+
+            if (!inserted &&
+                    rider.getName().compareToIgnoreCase(current.getName()) < 0) {
+
+                newList.insert(rider);
+                inserted = true;
+            }
+
+            newList.insert(current);
+
+            if (ridersAlphabetically.last()) {
+                break;
+            }
+
+            ridersAlphabetically.findNext();
+        }
+
+        if (!inserted) {
+            newList.insert(rider);
+        }
+
+        ridersAlphabetically = newList;
     }
 
     @Override
@@ -394,7 +442,7 @@ public class RideSharingSystem implements IRideSharingSystem {
 
     @Override
     public LinkedList<IRider> getAllRiders() {
-        return riders.getAll();
+        return ridersAlphabetically;
     }
 
     @Override
@@ -452,7 +500,38 @@ removeFromHistory(rider.getRideHistory(), ride.getRideId());
             }
         }
 
-        return riders.removeById(riderId);
+        boolean removed = riders.removeById(riderId);
+
+        if (removed) {
+            removeRiderAlphabetically(riderId);
+        }
+
+        return removed;
+    }
+
+    private void removeRiderAlphabetically(int riderId) {
+
+        if (ridersAlphabetically.empty()) {
+            return;
+        }
+
+        ridersAlphabetically.findFirst();
+
+        while (true) {
+
+            IRider rider = ridersAlphabetically.retrieve();
+
+            if (rider.getId() == riderId) {
+                ridersAlphabetically.remove();
+                return;
+            }
+
+            if (ridersAlphabetically.last()) {
+                break;
+            }
+
+            ridersAlphabetically.findNext();
+        }
     }
 
     @Override

@@ -6,22 +6,20 @@ public class Main {
             Scanner input = new Scanner(System.in);
 
             RideSharingSystem system = new RideSharingSystem();
+// Load riders first, then drivers, then rides.
+int ridersLoaded = system.loadRidersFromCSV("data/riders_100.csv");
 
-            // Load CSV files
-            boolean ridersLoaded =
-                    system.loadRidersFromCSV("data/riders_100.csv");
+int driversLoaded =system.loadDriversFromCSV("data/drivers_30.csv");
 
-            boolean driversLoaded =
-                    system.loadDriversFromCSV("data/drivers_30.csv");
+int ridesLoaded =system.loadRidesFromCSV("data/rides_40.csv");
 
-            boolean ridesLoaded =
-                    system.loadRidesFromCSV("data/rides_40.csv");
+System.out.println(ridersLoaded == -1 ? "Could not open the riders file.": "Riders loaded: " + ridersLoaded);
 
-            if (!ridersLoaded || !driversLoaded || !ridesLoaded) {
-                System.out.println("Error loading CSV files.");
-            }
+System.out.println(driversLoaded == -1 ? "Could not open the drivers file.": "Drivers loaded: " + driversLoaded);
 
-            int choice;
+System.out.println(ridesLoaded == -1 ? "Could not open the rides file.": "Rides loaded: " + ridesLoaded);
+            
+int choice;
 
             do {
 
@@ -32,12 +30,12 @@ public class Main {
                 System.out.println("3. Search for riders by name");
                 System.out.println("4. Add a rider");
 
-                System.out.println("5. List all drivers");
+                System.out.println("5. Show a rider's or driver's schedule");
                 System.out.println("6. Search for drivers by vehicle type");
                 System.out.println("7. Add a driver");
 
                 System.out.println("8. List all rides alphabetically by pickup location");
-                System.out.println("9. Search for rides by pickup location");
+                System.out.println("9. Find available drivers");
                 System.out.println("10. Search for rides by rider name");
                 System.out.println("11. List participants of a shared ride by pickup location");
                 System.out.println("12. Add a ride");
@@ -168,8 +166,37 @@ public class Main {
                     }
                   // Driver
 case 5: {
-    LinkedList<IDriver> allDrivers = system.getAllDrivers();
-    printDrivers(allDrivers);
+    try {
+        System.out.print("Enter person type (Rider/Driver): ");
+        String personType = input.nextLine().trim();
+
+        if (!personType.equalsIgnoreCase("Rider")
+                && !personType.equalsIgnoreCase("Driver")) {
+            System.out.println(
+                    "Invalid person type. Enter Rider or Driver.");
+            break;
+        }
+
+        System.out.print("Enter person ID: ");
+        int personId = Integer.parseInt(input.nextLine().trim());
+
+        IPerson person;
+
+        if (personType.equalsIgnoreCase("Rider")) {
+            person = system.searchRiderById(personId);
+        } else {
+            person = system.searchDriverById(personId);
+        }
+
+        if (person == null) {
+            System.out.println("Person not found.");
+        } else {
+            printSchedule(person.getSchedule().inOrder());
+        }
+    } catch (NumberFormatException e) {
+        System.out.println("Invalid person ID. Enter a whole number.");
+    }
+
     break;
 }
 
@@ -258,30 +285,30 @@ case 7: {
     }
     break;
 
-                    case 9:
-    System.out.print("Enter pickup location: ");
-    String pickupLocation = input.nextLine();
+                    case 9: {
+    try {
+        System.out.print("Enter vehicle type (SEDAN, LUXURY_SEDAN, SUV, VAN): ");
 
-    LinkedList<IRide> matchingRides =
-            system.searchRidesByPickupLocation(pickupLocation);
+        VehicleType vehicleType = VehicleType.valueOf(input.nextLine().trim().toUpperCase());
 
-    if (matchingRides.empty()) {
-        System.out.println("No rides found.");
-    } else {
-        matchingRides.findFirst();
+        System.out.print("Enter start date/time (MM/DD/YYYY HH:MM): ");
+        IDateTime start = parseDateTime(input.nextLine());
 
-        while (true) {
-            System.out.println(matchingRides.retrieve());
+        System.out.print("Enter end date/time (MM/DD/YYYY HH:MM): ");
+        IDateTime end = parseDateTime(input.nextLine());
 
-            if (matchingRides.last()) {
-                break;
-            }
+        ITimeSlot timeSlot = new TimeSlot(start, end);
 
-            matchingRides.findNext();
-        }
+        LinkedList<IDriver> availableDrivers =
+                system.findAvailableDrivers(timeSlot, vehicleType);
+
+        printDrivers(availableDrivers);
+    } catch (IllegalArgumentException e) {
+        System.out.println("Invalid input: " + e.getMessage());
     }
-    break;
 
+    break;
+}
                     case 10:
     System.out.print("Enter rider name: ");
     String riderName = input.nextLine();
@@ -468,3 +495,48 @@ try {
     }
 }
     }
+    private static void printSchedule(LinkedList<IRide> schedule) {
+    if (schedule.empty()) {
+        System.out.println("No rides found.");
+        return;
+    }
+
+    schedule.findFirst();
+
+    while (true) {
+        System.out.println(schedule.retrieve());
+
+        if (schedule.last()) {
+            break;
+        }
+
+        schedule.findNext();
+    }
+}
+
+private static IDateTime parseDateTime(String value) {
+    String[] parts = value.trim().split("\\s+");
+
+    if (parts.length != 2) {
+        throw new IllegalArgumentException(
+                "Use MM/DD/YYYY HH:MM."
+        );
+    }
+
+    String[] date = parts[0].split("/", -1);
+    String[] time = parts[1].split(":", -1);
+
+    if (date.length != 3 || time.length != 2) {
+        throw new IllegalArgumentException(
+                "Use MM/DD/YYYY HH:MM."
+        );
+    }
+
+    int month = Integer.parseInt(date[0]);
+    int day = Integer.parseInt(date[1]);
+    int year = Integer.parseInt(date[2]);
+    int hour = Integer.parseInt(time[0]);
+    int minute = Integer.parseInt(time[1]);
+
+    return new DateTime(year, month, day, hour, minute);
+}

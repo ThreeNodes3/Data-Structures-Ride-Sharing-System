@@ -1,18 +1,22 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.IOException;
 
 public class RideSharingSystem implements IRideSharingSystem {
 
     private IRiderList riders;
-    private IDriverList drivers;
     private IRideList rides;
     private int nextRideId;
-
+     private IBST<Integer, IDriver> driversById;
+    private IBST<String, IDriver> driversByPlate;
+    private IBST<VehicleType, IBST<Integer, IDriver>> driversByVehicleType;
     public RideSharingSystem() {
         riders = new RiderList();
-        drivers = new DriverList();
         rides = new RideList();
         nextRideId = 1;
+        driversById = new BST<Integer, IDriver>();
+        driversByPlate = new BST<String, IDriver>();
+        driversByVehicleType =new BST<VehicleType, IBST<Integer, IDriver>>();
     }
 
     @Override
@@ -110,12 +114,7 @@ public class RideSharingSystem implements IRideSharingSystem {
     }
 
     @Override
-    public boolean schedulePrivateRide(String pickupLocation,
-                                       IDateTime pickupTime,
-                                       IDateTime dropoffTime,
-                                       String dropoffLocation,
-                                       int riderId,
-                                       int driverId) {
+    public boolean schedulePrivateRide(String pickupLocation, IDateTime pickupTime,IDateTime dropoffTime,String dropoffLocation,int riderId,int driverId) {
 
         IRider rider = searchRiderById(riderId);
         IDriver driver = searchDriverById(driverId);
@@ -146,30 +145,19 @@ public class RideSharingSystem implements IRideSharingSystem {
         );
 
         if (rides.addRide(newRide)) {
-    rider.getRideHistory().insert(newRide);
-    driver.getRideHistory().insert(newRide);
-    nextRideId++;
-    return true;
-}
+            nextRideId++;
+            return true;
+        }
 
         return false;
     }
 
     @Override
-    public boolean scheduleSharedRide(String pickupLocation,
-                                      IDateTime pickupTime,
-                                      IDateTime dropoffTime,
-                                      String dropoffLocation,
-                                      int[] riderIds,
-                                      int driverId) {
+    public boolean scheduleSharedRide(String pickupLocation,  IDateTime pickupTime,IDateTime dropoffTime,String dropoffLocation, int[] riderIds,int driverId) {
 
         IDriver driver = searchDriverById(driverId);
 
-        if (driver == null
-                || riderIds == null
-                || riderIds.length < 2
-                || pickupTime == null
-                || dropoffTime == null) {
+        if (driver == null || riderIds == null|| riderIds.length < 2 || pickupTime == null|| dropoffTime == null) {
             return false;
         }
 
@@ -212,15 +200,10 @@ public class RideSharingSystem implements IRideSharingSystem {
         }
 
         if (rides.addRide(newRide)) {
-    driver.getRideHistory().insert(newRide);
+            nextRideId++;
+            return true;
+        }
 
-    for (int riderId : riderIds) {
-        searchRiderById(riderId).getRideHistory().insert(newRide);
-    }
-
-    nextRideId++;
-    return true;
-}
         return false;
     }
 
@@ -406,8 +389,8 @@ public class RideSharingSystem implements IRideSharingSystem {
             return false;
         }
 
-        LinkedList<IRide> allRides = rides.getAllAlphabetically();
-        LinkedList<Integer> rideIdsToRemove = new LinkedList<Integer>();
+        LinkedList<IRide> allRides =
+                rides.getAllAlphabetically();
 
         if (!allRides.empty()) {
 
@@ -419,57 +402,24 @@ public class RideSharingSystem implements IRideSharingSystem {
 
                 if (ride.hasRider(riderId)) {
 
-                    // PRIVATE RIDE
                     if (ride instanceof IPrivateRide) {
 
-                        removeFromHistory(
-                                ride.getDriver().getRideHistory(),
+                        rides.removeRideById(
                                 ride.getRideId()
                         );
 
-                        removeFromHistory(
-                                rider.getRideHistory(),
-                                ride.getRideId()
+                    } else if (ride instanceof ISharedRide) {
+
+                        ISharedRide sharedRide =
+                                (ISharedRide) ride;
+
+                        sharedRide.removeParticipantById(
+                                riderId
                         );
 
-                        rideIdsToRemove.insert(ride.getRideId());
-                    }
-
-                    // SHARED RIDE
-                    else if (ride instanceof ISharedRide) {
-
-                        ISharedRide sharedRide = (ISharedRide) ride;
-
-                        removeFromHistory(
-                                rider.getRideHistory(),
-                                ride.getRideId()
-                        );
-
-                        LinkedList<IRider> participants =
-                                sharedRide.getParticipants();
-
-                        boolean onlyOneParticipant = false;
-
-                        if (!participants.empty()) {
-                            participants.findFirst();
-                            onlyOneParticipant = participants.last();
-                        }
-
-                        if (onlyOneParticipant) {
-
-                            removeFromHistory(
-                                    ride.getDriver().getRideHistory(),
+                        if (sharedRide.isEmpty()) {
+                            rides.removeRideById(
                                     ride.getRideId()
-                            );
-
-                            rideIdsToRemove.insert(
-                                    ride.getRideId()
-                            );
-
-                        } else {
-
-                            sharedRide.removeParticipantById(
-                                    riderId
                             );
                         }
                     }
@@ -480,208 +430,220 @@ public class RideSharingSystem implements IRideSharingSystem {
                 }
 
                 allRides.findNext();
-            }
-        }
-
-        // Remove rides AFTER finishing traversal
-        if (!rideIdsToRemove.empty()) {
-
-            rideIdsToRemove.findFirst();
-
-            while (true) {
-
-                rides.removeRideById(
-                        rideIdsToRemove.retrieve()
-                );
-
-                if (rideIdsToRemove.last()) {
-                    break;
-                }
-
-                rideIdsToRemove.findNext();
             }
         }
 
         return riders.removeById(riderId);
     }
 
-    @Override
-    public boolean loadDriversFromCSV(String driversFilePath) {
+   @Override
+public int loadDriversFromCSV(String driversFilePath) {
+    if (driversFilePath == null) {
+        return -1;
+    }
 
-        if (driversFilePath == null) {
-            return false;
-        }
+    BufferedReader reader;
 
-        try (BufferedReader reader =
-                     new BufferedReader(new FileReader(driversFilePath))) {
+    try {
+        reader = new BufferedReader(new FileReader(driversFilePath));
+    } catch (IOException e) {
+        return -1;
+    }
 
-            String line;
+    int addedCount = 0;
 
-            while ((line = reader.readLine()) != null) {
+    try (BufferedReader file = reader) {
+        String line;
 
-                if (line.trim().isEmpty()) {
-                    continue;
-                }
+        while ((line = file.readLine()) != null) {
+            if (line.trim().isEmpty()) {
+                continue;
+            }
 
-                String[] data = line.split(",", -1);
+            String[] data = line.split(",", -1);
 
-                if (data.length != 5) {
-                    return false;
-                }
+            if (data.length != 5) {
+                continue;
+            }
 
-                for (int i = 0; i < data.length; i++) {
-
-                    data[i] = data[i].trim();
-
-                    if (data[i].isEmpty()) {
-                        return false;
-                    }
-                }
-
-                int driverId =
-                        Integer.parseInt(data[0]);
-
+            try {
+                int driverId = Integer.parseInt(data[0].trim());
+                String name = data[1].trim();
+                String phoneNumber = data[2].trim();
+                String vehiclePlate = data[3].trim();
                 VehicleType vehicleType =
-                        VehicleType.valueOf(data[4]);
+                        VehicleType.valueOf(data[4].trim());
 
                 Driver driver = new Driver(
                         driverId,
-                        data[1],
-                        data[2],
-                        data[3],
+                        name,
+                        phoneNumber,
+                        vehiclePlate,
                         vehicleType
                 );
 
-                if (!addDriver(driver)) {
-                    return false;
+                if (addDriver(driver)) {
+                    addedCount++;
                 }
-            }
-
-            return true;
-
-        } catch (java.io.IOException |
-                 IllegalArgumentException e) {
-
-            return false;
-        }
-    }
-
-    @Override
-    public boolean addDriver(IDriver driver) {
-        return drivers.add(driver);
-    }
-
-    @Override
-    public IDriver searchDriverById(int driverId) {
-        return drivers.findById(driverId);
-    }
-
-    @Override
-    public IDriver searchDriverByVehiclePlate(
-            String vehiclePlate) {
-
-        return drivers.findByVehiclePlate(vehiclePlate);
-    }
-
-    @Override
-    public LinkedList<IDriver> searchDriversByVehicleType(
-            VehicleType vehicleType) {
-
-        return drivers.findByVehicleType(vehicleType);
-    }
-
-    @Override
-    public LinkedList<IDriver> getAllDrivers() {
-        return drivers.getAll();
-    }
-
-    @Override
-    public boolean removeDriver(int driverId) {
-
-        if (drivers.findById(driverId) == null) {
-            return false;
-        }
-
-        LinkedList<IRide> allRides =
-                rides.getAllAlphabetically();
-
-        LinkedList<Integer> rideIdsToRemove =
-                new LinkedList<Integer>();
-
-        if (!allRides.empty()) {
-
-            allRides.findFirst();
-
-            while (true) {
-
-                IRide ride = allRides.retrieve();
-
-                if (ride.getDriver().getId() == driverId) {
-                    removeFromHistory(ride.getDriver().getRideHistory(), ride.getRideId());
-                    if (ride instanceof IPrivateRide) {
-    IPrivateRide privateRide = (IPrivateRide) ride;
-    removeFromHistory(privateRide.getRider().getRideHistory(), ride.getRideId());
-}
-else if (ride instanceof ISharedRide) {
-    ISharedRide sharedRide = (ISharedRide) ride;
-    LinkedList<IRider> participants = sharedRide.getParticipants();
-    if (!participants.empty()) {
-    participants.findFirst();
-    while (true) {
-    IRider participant = participants.retrieve();
-    removeFromHistory(participant.getRideHistory(), ride.getRideId());
-
-    if (participants.last()) break;
-    participants.findNext();
-}
-}
-}
-                    rideIdsToRemove.insert(
-                            ride.getRideId()
-                    );
-                }
-
-                if (allRides.last()) {
-                    break;
-                }
-
-                allRides.findNext();
+            } catch (IllegalArgumentException e) {
+                // Skip an invalid record and continue reading.
+                continue;
             }
         }
-
-        if (!rideIdsToRemove.empty()) {
-
-            rideIdsToRemove.findFirst();
-
-            while (true) {
-
-                rides.removeRideById(
-                        rideIdsToRemove.retrieve()
-                );
-
-                if (rideIdsToRemove.last()) {
-                    break;
-                }
-
-                rideIdsToRemove.findNext();
-            }
-        }
-
-        return drivers.removeById(driverId);
+    } catch (IOException e) {
+        
     }
-    private void removeFromHistory(LinkedList<IRide> history, int rideId) {
-    if (history.empty()) return;
 
-    history.findFirst();
+    return addedCount;
+}
+
+ @Override
+public boolean addDriver(IDriver driver) {
+    if (driver == null) {
+        return false;
+    }
+
+    // Check uniqueness before changing any index.
+    if (driversById.findKey(driver.getId())) {
+        return false;
+    }
+
+    if (driversByPlate.findKey(driver.getVehiclePlate())) {
+        return false;
+    }
+
+    driversById.insert(driver.getId(), driver);
+    driversByPlate.insert(driver.getVehiclePlate(), driver);
+
+    VehicleType type = driver.getVehicleType();
+
+    if (driversByVehicleType.findKey(type)) {
+        IBST<Integer, IDriver> typeDrivers =
+                driversByVehicleType.retrieve();
+
+        typeDrivers.insert(driver.getId(), driver);
+    } else {
+        IBST<Integer, IDriver> typeDrivers =
+                new BST<Integer, IDriver>();
+
+        typeDrivers.insert(driver.getId(), driver);
+        driversByVehicleType.insert(type, typeDrivers);
+    }
+
+    return true;
+}
+
+    @Override
+public IDriver searchDriverById(int driverId) {
+    if (driversById.findKey(driverId)) {
+        return driversById.retrieve();
+    }
+
+    return null;
+}
+
+    @Override
+public LinkedList<IDriver> searchDriversByVehicleType(
+        VehicleType vehicleType) {
+
+    if (vehicleType == null
+            || !driversByVehicleType.findKey(vehicleType)) {
+        return new LinkedList<IDriver>();
+    }
+
+    IBST<Integer, IDriver> typeDrivers =
+            driversByVehicleType.retrieve();
+
+    return typeDrivers.inOrder();
+}
+
+@Override
+public LinkedList<IDriver> getAllDrivers() {
+    return driversById.inOrder();
+}
+@Override
+public LinkedList<IDriver> findAvailableDrivers(
+        ITimeSlot timeSlot, VehicleType vehicleType) {
+
+    LinkedList<IDriver> availableDrivers =
+            new LinkedList<IDriver>();
+
+    if (timeSlot == null || vehicleType == null) {
+        return availableDrivers;
+    }
+
+    LinkedList<IDriver> matchingDrivers =
+            searchDriversByVehicleType(vehicleType);
+
+    if (matchingDrivers.empty()) {
+        return availableDrivers;
+    }
+
+    matchingDrivers.findFirst();
 
     while (true) {
-        if (history.retrieve().getRideId() == rideId) {
-            history.remove();
-            return;
+        IDriver driver = matchingDrivers.retrieve();
+
+        // Add the driver only if no scheduled ride overlaps this slot.
+        if (!driver.getSchedule().findKey(timeSlot)) {
+            availableDrivers.insert(driver);
         }
 
-        if (history.last()) break;
-        history.findNext();
+        if (matchingDrivers.last()) {
+            break;
+        }
+
+        matchingDrivers.findNext();
     }
+
+    return availableDrivers;
+}
+@Override
+public boolean removeDriver(int driverId) {
+    IDriver driver = searchDriverById(driverId);
+
+    if (driver == null) {
+        return false;
+    }
+
+    // Get the driver's rides before cancellation changes the schedule.
+    LinkedList<IRide> driverRides = driver.getSchedule().inOrder();
+
+    if (!driverRides.empty()) {
+        driverRides.findFirst();
+
+        while (true) {
+            IRide ride = driverRides.retrieve();
+
+            cancelRide(ride.getRideId());
+
+            if (driverRides.last()) {
+                break;
+            }
+
+            driverRides.findNext();
+        }
+    }
+
+    // Remove the driver from the two unique-key indexes.
+    driversById.removeKey(driverId);
+    driversByPlate.removeKey(driver.getVehiclePlate());
+
+    // Remove the driver from the inner vehicle-type tree.
+    VehicleType type = driver.getVehicleType();
+
+    if (driversByVehicleType.findKey(type)) {
+        IBST<Integer, IDriver> typeDrivers =
+                driversByVehicleType.retrieve();
+
+        typeDrivers.removeKey(driverId);
+
+        // Remove the outer key if this type has no drivers left.
+        if (typeDrivers.empty()) {
+            driversByVehicleType.removeKey(type);
+        }
+    }
+
+    return true;
 }
 }

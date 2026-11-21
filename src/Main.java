@@ -494,7 +494,7 @@ try {
         driverResults.findNext();
     }
 }
-    }
+    
     private static void printSchedule(LinkedList<IRide> schedule) {
     if (schedule.empty()) {
         System.out.println("No rides found.");
@@ -539,4 +539,5 @@ private static IDateTime parseDateTime(String value) {
     int minute = Integer.parseInt(time[1]);
 
     return new DateTime(year, month, day, hour, minute);
+}
 }

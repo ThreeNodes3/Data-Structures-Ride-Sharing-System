@@ -1,11 +1,17 @@
-public class Rider extends Person implements IRider{
+public class Rider extends Person implements IRider {
 
-    private String email;
-    private  String homeCity;
-    
+    private final String email;
+    private final String homeCity;
 
-    public Rider(int riderid, String name, String phoneNumber, String email, String homeCity) {
-        super(riderid, name, phoneNumber);
+    public Rider(
+            int id,
+            String name,
+            String email,
+            String phoneNumber,
+            String homeCity) {
+
+        super(id, name, phoneNumber);
+
         this.email = email;
         this.homeCity = homeCity;
     }
@@ -16,34 +22,35 @@ public class Rider extends Person implements IRider{
     }
 
     @Override
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    @Override
     public String getHomeCity() {
         return homeCity;
     }
 
     @Override
-    public void setHomeCity(String homeCity) {
-        this.homeCity = homeCity;
-    }
+    public int compareTo(IRider other) {
 
-    public int compareTo(IRider other){
-        if(this.getId()<other.getId() )
+        if (getId() < other.getId()) {
             return -1;
-        else
-            if(this.getId()>other.getId())
-                return 1;
-            else
-                return 0;
+        }
+
+        if (getId() > other.getId()) {
+            return 1;
+        }
+
+        return 0;
     }
 
- @Override
-public String toString() {
-    return getId() + "," + getName() + "," + getEmail()
-            + "," + getPhoneNumber() + "," + getHomeCity();
-}
+    @Override
+    public String toString() {
 
+        return getId()
+                + ","
+                + getName()
+                + ","
+                + email
+                + ","
+                + getPhoneNumber()
+                + ","
+                + homeCity;
+    }
 }

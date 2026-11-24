@@ -1,4 +1,15 @@
-package PACKAGE_NAME;
+public class BSTNode<K extends Comparable<K>, T> {
 
-public class BSTNode {
+    K key;
+    T data;
+
+    BSTNode<K, T> left;
+    BSTNode<K, T> right;
+
+    public BSTNode(K key, T data) {
+        this.key = key;
+        this.data = data;
+        this.left = null;
+        this.right = null;
+    }
 }

@@ -4,14 +4,22 @@ import java.io.IOException;
 
 public class RideSharingSystem implements IRideSharingSystem {
 
-    private IRiderList riders;
+    private IBST<Integer, IRider> ridersById;
+    private IBST<String, IBST<Integer, IRider>> ridersByName;
+    private IBST<String, IBST<Integer, IRider>> ridersByHomeCity;
     private IRideList rides;
     private int nextRideId;
      private IBST<Integer, IDriver> driversById;
     private IBST<String, IDriver> driversByPlate;
     private IBST<VehicleType, IBST<Integer, IDriver>> driversByVehicleType;
     public RideSharingSystem() {
-        riders = new RiderList();
+        ridersById = new BST<Integer, IRider>();
+
+        ridersByName = new BST<String,
+                        IBST<Integer, IRider>>();
+
+        ridersByHomeCity = new BST<String,
+                        IBST<Integer, IRider>>();
         rides = new RideList();
         nextRideId = 1;
         driversById = new BST<Integer, IDriver>();

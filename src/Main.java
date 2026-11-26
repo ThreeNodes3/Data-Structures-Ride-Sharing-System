@@ -51,76 +51,100 @@ int choice;
 
                     // Rider
                     case 1: {
-                        LinkedList<IRider> allRiders = system.getAllRiders();
 
-                        if (allRiders.empty()) {
-                            System.out.println("No riders found.");
+                        LinkedList<IRider> riders =
+                                system.getAllRiders();
+
+                        if (riders.empty()) {
+
+                            System.out.println(
+                                    "No riders found.");
+
                         } else {
-                            allRiders.findFirst();
+
+                            riders.findFirst();
 
                             while (true) {
-                                System.out.println(allRiders.retrieve());
 
-                                if (allRiders.last()) {
+                                System.out.println(
+                                        riders.retrieve());
+
+                                if (riders.last()) {
                                     break;
                                 }
 
-                                allRiders.findNext();
+                                riders.findNext();
                             }
                         }
 
                         break;
                     }
                     case 2: {
-                        System.out.print("Enter home city: ");
-                        String homeCity = input.nextLine();
 
-                        LinkedList<IRider> matchingRiders =
-                                system.searchRidersByHomeCity(homeCity);
+                        System.out.print("Enter rider ID: ");
 
-                        if (matchingRiders.empty()) {
-                            System.out.println("No riders found.");
+                        int riderId =
+                                Integer.parseInt(
+                                        input.nextLine().trim());
+
+                        IRider rider =
+                                system.searchRiderById(riderId);
+
+                        int comparisons =
+                                system.nbKeyCompRiderById(riderId);
+
+                        if (rider == null) {
+
+                            System.out.println(
+                                    "Rider not found.");
+
                         } else {
-                            matchingRiders.findFirst();
 
-                            while (true) {
-                                System.out.println(matchingRiders.retrieve());
-
-                                if (matchingRiders.last()) {
-                                    break;
-                                }
-
-                                matchingRiders.findNext();
-                            }
+                            System.out.println(rider);
                         }
+
+                        System.out.println(
+                                "Key comparisons: "
+                                        + comparisons);
 
                         break;
                     }
                     case 3: {
-                        System.out.print("Enter rider name: ");
-                        String riderName = input.nextLine();
 
-                        LinkedList<IRider> matchingRiders =
-                                system.searchRidersByName(riderName);
+                        System.out.print("Enter home city: ");
 
-                        if (matchingRiders.empty()) {
-                            System.out.println("No riders found.");
+                        String homeCity =
+                                input.nextLine().trim();
+
+                        LinkedList<IRider> riders =
+                                system.searchRidersByHomeCity(
+                                        homeCity);
+
+                        if (riders.empty()) {
+
+                            System.out.println(
+                                    "No riders found.");
+
                         } else {
-                            matchingRiders.findFirst();
+
+                            riders.findFirst();
 
                             while (true) {
-                                System.out.println(matchingRiders.retrieve());
 
-                                if (matchingRiders.last()) {
+                                System.out.println(
+                                        riders.retrieve());
+
+                                if (riders.last()) {
                                     break;
                                 }
 
-                                matchingRiders.findNext();
+                                riders.findNext();
                             }
                         }
 
                         break;
                     }
+
                     case 4: {
                         try {
                             System.out.print("Enter rider ID: ");
@@ -165,7 +189,7 @@ int choice;
                         break;
                     }
                   // Driver
-case 5: {
+ case 5: {
     try {
         System.out.print("Enter person type (Rider/Driver): ");
         String personType = input.nextLine().trim();
@@ -200,71 +224,101 @@ case 5: {
     break;
 }
 
-case 6: {
-    System.out.print(
-            "Enter vehicle type (SEDAN, LUXURY_SEDAN, SUV, VAN): ");
+                    case 6: {
 
-    try {
-        VehicleType vehicleType = VehicleType.valueOf(
-                input.nextLine().trim().toUpperCase());
+                        IndexName[] indexes =
+                                IndexName.values();
 
-        LinkedList<IDriver> matchingDrivers =
-                system.searchDriversByVehicleType(vehicleType);
+                        for (int i = 0; i < indexes.length; i++) {
 
-        printDrivers(matchingDrivers);
+                            IndexName index =
+                                    indexes[i];
 
-    } catch (IllegalArgumentException e) {
-        System.out.println(
-                "Invalid vehicle type. Use SEDAN, LUXURY_SEDAN, SUV, or VAN.");
-    }
+                            int size =
+                                    system.indexSize(index);
 
-    break;
-}
+                            int height =
+                                    system.indexHeight(index);
 
-case 7: {
-    try {
-        System.out.print("Enter driver ID: ");
-        int newDriverId = Integer.parseInt(input.nextLine().trim());
+                            int minimumHeight;
 
-        System.out.print("Enter full name: ");
-        String driverName = input.nextLine().trim();
+                            if (size == 0) {
+                                minimumHeight = 0;
+                            } else {
+                                minimumHeight =
+                                        (int) Math.ceil(
+                                                Math.log(size + 1)
+                                                        / Math.log(2)
+                                        );
+                            }
 
-        System.out.print("Enter phone number (10 digits): ");
-        String phoneNumber = input.nextLine().trim();
+                            System.out.println(
+                                    index
+                                            + " | Size: "
+                                            + size
+                                            + " | Height: "
+                                            + height
+                                            + " | Minimum Height: "
+                                            + minimumHeight
+                            );
+                        }
 
-        System.out.print("Enter vehicle plate (example: ABC1234): ");
-        String vehiclePlate = input.nextLine().trim();
+                        break;
+                    }
+                    case 7: {
 
-        System.out.print(
-                "Enter vehicle type (SEDAN, LUXURY_SEDAN, SUV, VAN): ");
+                        try {
 
-        VehicleType vehicleType = VehicleType.valueOf(
-                input.nextLine().trim().toUpperCase());
+                            System.out.print("Enter rider ID: ");
+                            int riderId =
+                                    Integer.parseInt(
+                                            input.nextLine().trim());
 
-        Driver newDriver = new Driver(
-                newDriverId, driverName, phoneNumber,
-                vehiclePlate, vehicleType);
+                            System.out.print("Enter full name: ");
+                            String name =
+                                    input.nextLine().trim();
 
-        boolean added = system.addDriver(newDriver);
+                            System.out.print("Enter email: ");
+                            String email =
+                                    input.nextLine().trim();
 
-        if (added) {
-            System.out.println("Driver added successfully.");
-        } else {
-            System.out.println(
-                    "Failed to add driver: duplicate ID, duplicate plate, or invalid data.");
-        }
+                            System.out.print("Enter phone number: ");
+                            String phoneNumber =
+                                    input.nextLine().trim();
 
-    } catch (NumberFormatException e) {
-        System.out.println("Invalid driver ID. Enter a whole number.");
+                            System.out.print("Enter home city: ");
+                            String homeCity =
+                                    input.nextLine().trim();
 
-    } catch (IllegalArgumentException e) {
-        System.out.println("Failed to add driver: " + e.getMessage());
-    }
+                            Rider rider =
+                                    new Rider(
+                                            riderId,
+                                            name,
+                                            email,
+                                            phoneNumber,
+                                            homeCity
+                                    );
 
-    break;
-}
+                            if (system.addRider(rider)) {
 
-                    // Ride
+                                System.out.println(
+                                        "Rider added successfully.");
+
+                            } else {
+
+                                System.out.println(
+                                        "Failed to add rider.");
+                            }
+
+                        } catch (IllegalArgumentException e) {
+
+                            System.out.println(
+                                    "Invalid input: "
+                                            + e.getMessage());
+                        }
+
+                        break;
+                    }         // Ride
                     case 8:
     LinkedList<IRide> allRides = system.getAllRidesAlphabetically();
 

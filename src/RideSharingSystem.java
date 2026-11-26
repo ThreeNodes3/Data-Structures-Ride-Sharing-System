@@ -9,22 +9,23 @@ public class RideSharingSystem implements IRideSharingSystem {
     private IBST<String, IBST<Integer, IRider>> ridersByHomeCity;
     private IRideList rides;
     private int nextRideId;
-     private IBST<Integer, IDriver> driversById;
+    private IBST<Integer, IDriver> driversById;
     private IBST<String, IDriver> driversByPlate;
     private IBST<VehicleType, IBST<Integer, IDriver>> driversByVehicleType;
+
     public RideSharingSystem() {
         ridersById = new BST<Integer, IRider>();
 
         ridersByName = new BST<String,
-                        IBST<Integer, IRider>>();
+                IBST<Integer, IRider>>();
 
         ridersByHomeCity = new BST<String,
-                        IBST<Integer, IRider>>();
+                IBST<Integer, IRider>>();
         rides = new RideList();
         nextRideId = 1;
         driversById = new BST<Integer, IDriver>();
         driversByPlate = new BST<String, IDriver>();
-        driversByVehicleType =new BST<VehicleType, IBST<Integer, IDriver>>();
+        driversByVehicleType = new BST<VehicleType, IBST<Integer, IDriver>>();
     }
 
     @Override
@@ -122,7 +123,7 @@ public class RideSharingSystem implements IRideSharingSystem {
     }
 
     @Override
-    public boolean schedulePrivateRide(String pickupLocation, IDateTime pickupTime,IDateTime dropoffTime,String dropoffLocation,int riderId,int driverId) {
+    public boolean schedulePrivateRide(String pickupLocation, IDateTime pickupTime, IDateTime dropoffTime, String dropoffLocation, int riderId, int driverId) {
 
         IRider rider = searchRiderById(riderId);
         IDriver driver = searchDriverById(driverId);
@@ -161,11 +162,11 @@ public class RideSharingSystem implements IRideSharingSystem {
     }
 
     @Override
-    public boolean scheduleSharedRide(String pickupLocation,  IDateTime pickupTime,IDateTime dropoffTime,String dropoffLocation, int[] riderIds,int driverId) {
+    public boolean scheduleSharedRide(String pickupLocation, IDateTime pickupTime, IDateTime dropoffTime, String dropoffLocation, int[] riderIds, int driverId) {
 
         IDriver driver = searchDriverById(driverId);
 
-        if (driver == null || riderIds == null|| riderIds.length < 2 || pickupTime == null|| dropoffTime == null) {
+        if (driver == null || riderIds == null || riderIds.length < 2 || pickupTime == null || dropoffTime == null) {
             return false;
         }
 
@@ -317,193 +318,376 @@ public class RideSharingSystem implements IRideSharingSystem {
     }
 
     @Override
-    public boolean loadRidersFromCSV(String ridersFilePath) {
+    public int loadRidersFromCSV(String ridersFilePath) {
+
+        if (ridersFilePath == null) {
+            return -1;
+        }
+
+        BufferedReader reader;
 
         try {
+            reader = new BufferedReader(
+                    new FileReader(ridersFilePath));
+        } catch (IOException e) {
+            return -1;
+        }
 
-            BufferedReader reader =
-                    new BufferedReader(new FileReader(ridersFilePath));
+        int addedCount = 0;
+
+        try (BufferedReader file = reader) {
 
             String line;
 
-            while ((line = reader.readLine()) != null) {
+            while ((line = file.readLine()) != null) {
 
-                String[] data = line.split(",");
+                if (line.trim().isEmpty()) {
+                    continue;
+                }
 
-                int riderId = Integer.parseInt(data[0]);
-                String name = data[1];
-                String email = data[2];
-                String phoneNumber = data[3];
-                String homeCity = data[4];
+                String[] data = line.split(",", -1);
 
-                Rider rider = new Rider(
-                        riderId,
-                        name,
-                        phoneNumber,
-                        email,
-                        homeCity
-                );
+                if (data.length != 5) {
+                    continue;
+                }
 
-                if (!addRider(rider)) {
-                    reader.close();
-                    return false;
+                try {
+
+                    int riderId =
+                            Integer.parseInt(
+                                    data[0].trim());
+
+                    String name =
+                            data[1].trim();
+
+                    String email =
+                            data[2].trim();
+
+                    String phoneNumber =
+                            data[3].trim();
+
+                    String homeCity =
+                            data[4].trim();
+
+                    Rider rider =
+                            new Rider(
+                                    riderId,
+                                    name,
+                                    email,
+                                    phoneNumber,
+                                    homeCity
+                            );
+
+                    if (addRider(rider)) {
+                        addedCount++;
+                    }
+
+                } catch (IllegalArgumentException e) {
+                    continue;
                 }
             }
 
-            reader.close();
-            return true;
-
-        } catch (Exception e) {
-            return false;
+        } catch (IOException e) {
+            // Return the number already loaded
         }
+
+        return addedCount;
     }
 
     @Override
     public boolean addRider(IRider rider) {
-        return riders.add(rider);
+
+        if (rider == null
+                || rider.getName() == null
+                || rider.getHomeCity() == null) {
+            return false;
+        }
+
+        if (ridersById.findKey(rider.getId())) {
+            return false;
+        }
+
+        ridersById.insert(
+                rider.getId(),
+                rider
+        );
+
+        addRiderToGroupedIndex(
+                ridersByName,
+                rider.getName(),
+                rider
+        );
+
+        addRiderToGroupedIndex(
+                ridersByHomeCity,
+                rider.getHomeCity(),
+                rider
+        );
+
+        return true;
+    }
+
+    private void addRiderToGroupedIndex(
+            IBST<String, IBST<Integer, IRider>> index,
+            String key,
+            IRider rider) {
+
+        if (index.findKey(key)) {
+
+            IBST<Integer, IRider> inner =
+                    index.retrieve();
+
+            inner.insert(
+                    rider.getId(),
+                    rider
+            );
+
+        } else {
+
+            IBST<Integer, IRider> inner =
+                    new BST<Integer, IRider>();
+
+            inner.insert(
+                    rider.getId(),
+                    rider
+            );
+
+            index.insert(
+                    key,
+                    inner
+            );
+        }
     }
 
     @Override
     public IRider searchRiderById(int riderId) {
-        return riders.findById(riderId);
-    }
 
-    @Override
-    public IRider searchRiderByEmail(String email) {
-        return riders.findByEmail(email);
+        if (ridersById.findKey(riderId)) {
+            return ridersById.retrieve();
+        }
+
+        return null;
     }
 
     @Override
     public LinkedList<IRider> searchRidersByName(String fullName) {
-        return riders.findByName(fullName);
+
+        LinkedList<IRider> result =
+                new LinkedList<IRider>();
+
+        if (fullName == null) {
+            return result;
+        }
+
+        if (!ridersByName.findKey(fullName)) {
+            return result;
+        }
+
+        IBST<Integer, IRider> inner =
+                ridersByName.retrieve();
+
+        return inner.inOrder();
     }
 
     @Override
     public LinkedList<IRider> searchRidersByHomeCity(String homeCity) {
-        return riders.findByHomeCity(homeCity);
+
+        LinkedList<IRider> result =
+                new LinkedList<IRider>();
+
+        if (homeCity == null) {
+            return result;
+        }
+
+        if (!ridersByHomeCity.findKey(homeCity)) {
+            return result;
+        }
+
+        IBST<Integer, IRider> inner =
+                ridersByHomeCity.retrieve();
+
+        return inner.inOrder();
     }
 
     @Override
     public LinkedList<IRider> getAllRiders() {
-        return riders.getAll();
+
+        return ridersById.inOrder();
+    }
+
+    private void removeRiderFromGroupedIndex(
+            IBST<String, IBST<Integer, IRider>> index,
+            String key,
+            int riderId) {
+
+        if (!index.findKey(key)) {
+            return;
+        }
+
+        IBST<Integer, IRider> inner =
+                index.retrieve();
+
+        inner.removeKey(riderId);
+
+        if (inner.empty()) {
+            index.removeKey(key);
+        }
     }
 
     @Override
     public boolean removeRider(int riderId) {
 
-        IRider rider = riders.findById(riderId);
+        IRider rider =
+                searchRiderById(riderId);
 
         if (rider == null) {
             return false;
         }
 
-        LinkedList<IRide> allRides =
-                rides.getAllAlphabetically();
+        LinkedList<IRide> riderRides =
+                rider.getSchedule().inOrder();
 
-        if (!allRides.empty()) {
+        if (!riderRides.empty()) {
 
-            allRides.findFirst();
+            riderRides.findFirst();
 
             while (true) {
 
-                IRide ride = allRides.retrieve();
+                IRide ride =
+                        riderRides.retrieve();
 
-                if (ride.hasRider(riderId)) {
+                if (ride instanceof IPrivateRide) {
 
-                    if (ride instanceof IPrivateRide) {
+                    cancelRide(
+                            ride.getRideId()
+                    );
 
-                        rides.removeRideById(
+                } else if (ride instanceof ISharedRide) {
+
+                    ISharedRide sharedRide =
+                            (ISharedRide) ride;
+
+                    sharedRide.removeParticipantById(
+                            riderId
+                    );
+
+                    rider.getSchedule().removeKey(
+                            ride.getTimeSlot()
+                    );
+
+                    if (sharedRide.isEmpty()) {
+
+                        cancelRide(
                                 ride.getRideId()
                         );
-
-                    } else if (ride instanceof ISharedRide) {
-
-                        ISharedRide sharedRide =
-                                (ISharedRide) ride;
-
-                        sharedRide.removeParticipantById(
-                                riderId
-                        );
-
-                        if (sharedRide.isEmpty()) {
-                            rides.removeRideById(
-                                    ride.getRideId()
-                            );
-                        }
                     }
                 }
 
-                if (allRides.last()) {
+                if (riderRides.last()) {
                     break;
                 }
 
-                allRides.findNext();
+                riderRides.findNext();
             }
         }
 
-        return riders.removeById(riderId);
+        ridersById.removeKey(
+                riderId
+        );
+
+        removeRiderFromGroupedIndex(
+                ridersByName,
+                rider.getName(),
+                riderId
+        );
+
+        removeRiderFromGroupedIndex(
+                ridersByHomeCity,
+                rider.getHomeCity(),
+                riderId
+        );
+
+        return true;
     }
 
-   @Override
-public int loadDriversFromCSV(String driversFilePath) {
-    if (driversFilePath == null) {
-        return -1;
+    @Override
+    public int nbKeyCompRiderById(int riderId) {
+        return ridersById.nbKeyComp(riderId);
     }
 
-    BufferedReader reader;
+    @Override
+    public int indexSize(IndexName index) {
 
-    try {
-        reader = new BufferedReader(new FileReader(driversFilePath));
-    } catch (IOException e) {
-        return -1;
-    }
+        switch (index) {
 
-    int addedCount = 0;
+            case RIDERS_BY_ID:
+                return ridersById.size();
 
-    try (BufferedReader file = reader) {
-        String line;
+            case RIDERS_BY_NAME:
+                return ridersByName.size();
 
-        while ((line = file.readLine()) != null) {
-            if (line.trim().isEmpty()) {
-                continue;
-            }
+            case RIDERS_BY_HOME_CITY:
+                return ridersByHomeCity.size();
 
-            String[] data = line.split(",", -1);
+            case DRIVERS_BY_ID:
+                return driversById.size();
 
-            if (data.length != 5) {
-                continue;
-            }
+            case DRIVERS_BY_PLATE:
+                return driversByPlate.size();
 
-            try {
-                int driverId = Integer.parseInt(data[0].trim());
-                String name = data[1].trim();
-                String phoneNumber = data[2].trim();
-                String vehiclePlate = data[3].trim();
-                VehicleType vehicleType =
-                        VehicleType.valueOf(data[4].trim());
+            case DRIVERS_BY_VEHICLE_TYPE:
+                return driversByVehicleType.size();
 
-                Driver driver = new Driver(
-                        driverId,
-                        name,
-                        phoneNumber,
-                        vehiclePlate,
-                        vehicleType
-                );
+            case RIDES_BY_ID:
+                return ridesById.size();
 
-                if (addDriver(driver)) {
-                    addedCount++;
-                }
-            } catch (IllegalArgumentException e) {
-                // Skip an invalid record and continue reading.
-                continue;
-            }
+            case RIDES_BY_PICKUP_LOCATION:
+                return ridesByPickupLocation.size();
+
+            case RIDES_BY_PICKUP_TIME:
+                return ridesByPickupTime.size();
+
+            default:
+                return 0;
         }
-    } catch (IOException e) {
-        
     }
 
-    return addedCount;
-}
+    @Override
+    public int indexHeight(IndexName index) {
+
+        switch (index) {
+
+            case RIDERS_BY_ID:
+                return ridersById.height();
+
+            case RIDERS_BY_NAME:
+                return ridersByName.height();
+
+            case RIDERS_BY_HOME_CITY:
+                return ridersByHomeCity.height();
+
+            case DRIVERS_BY_ID:
+                return driversById.height();
+
+            case DRIVERS_BY_PLATE:
+                return driversByPlate.height();
+
+            case DRIVERS_BY_VEHICLE_TYPE:
+                return driversByVehicleType.height();
+
+            case RIDES_BY_ID:
+                return ridesById.height();
+
+            case RIDES_BY_PICKUP_LOCATION:
+                return ridesByPickupLocation.height();
+
+            case RIDES_BY_PICKUP_TIME:
+                return ridesByPickupTime.height();
+
+            default:
+                return 0;
+        }
+    }
 
  @Override
 public boolean addDriver(IDriver driver) {

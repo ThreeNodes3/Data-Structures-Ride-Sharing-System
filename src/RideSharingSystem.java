@@ -884,6 +884,67 @@ public int loadRidesFromCSV(String ridesFilePath) {
                 return 0;
         }
     }
+    @Override
+public int loadDriversFromCSV(String driversFilePath) {
+    if (driversFilePath == null) {
+        return -1;
+    }
+
+    BufferedReader reader;
+
+    try {
+        reader = new BufferedReader(new FileReader(driversFilePath));
+    } catch (IOException e) {
+        return -1;
+    }
+
+    int addedCount = 0;
+
+    try (BufferedReader file = reader) {
+        String line;
+
+        while ((line = file.readLine()) != null) {
+            if (line.trim().isEmpty()) {
+                continue;
+            }
+
+            String[] data = line.split(",", -1);
+
+            if (data.length != 5) {
+                continue;
+            }
+
+            try {
+                int driverId = Integer.parseInt(data[0].trim());
+                String name = data[1].trim();
+                String phoneNumber = data[2].trim();
+                String vehiclePlate = data[3].trim();
+
+                VehicleType vehicleType =
+                        VehicleType.valueOf(data[4].trim());
+
+                Driver driver = new Driver(
+                        driverId,
+                        name,
+                        phoneNumber,
+                        vehiclePlate,
+                        vehicleType
+                );
+
+                if (addDriver(driver)) {
+                    addedCount++;
+                }
+            } catch (IllegalArgumentException e) {
+                // Skip an invalid record and continue reading.
+                continue;
+            }
+        }
+    } catch (IOException e) {
+        // Keep the records already added if reading is interrupted.
+    }
+
+    return addedCount;
+}
 
  @Override
 public boolean addDriver(IDriver driver) {

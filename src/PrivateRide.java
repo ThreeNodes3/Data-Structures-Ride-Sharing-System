@@ -1,16 +1,20 @@
 public class PrivateRide extends Ride implements IPrivateRide {
 
-    private IRider rider;
+    private final IRider rider;
 
-    public PrivateRide(int rideId, String pickupLocation, IDateTime pickupTime,
-                       IDateTime dropoffTime, String dropoffLocation,
+    public PrivateRide(int rideId, String pickupLocation,
+                       String dropoffLocation, ITimeSlot timeSlot,
                        IDriver driver, IRider rider) {
 
-        super(rideId, pickupLocation, pickupTime, dropoffTime, dropoffLocation, driver);
+        super(rideId, pickupLocation, dropoffLocation, timeSlot, driver);
+
         if (rider == null) {
-    throw new IllegalArgumentException("A private ride must have exactly one rider.");
-}
-this.rider = rider;
+            throw new IllegalArgumentException(
+                "A private ride must have exactly one rider."
+            );
+        }
+
+        this.rider = rider;
     }
 
     @Override
@@ -19,20 +23,12 @@ this.rider = rider;
     }
 
     @Override
-public void setRider(IRider rider) {
-    if (rider == null) {
-        throw new IllegalArgumentException("A private ride must have exactly one rider.");
+    public boolean hasRider(int riderId) {
+        return rider.getId() == riderId;
     }
-    this.rider = rider;
-}
 
     @Override
-    public boolean hasRider(int riderId) {
-        return rider != null && rider.getId() == riderId;
+    public String toString() {
+        return "Private," + super.toString() + "," + getRider().getId();
     }
-     @Override
-     public String toString(){
-return "Private,"+super.toString()+","+getRider().getId();
-
-     }
 }

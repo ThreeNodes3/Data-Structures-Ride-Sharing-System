@@ -388,12 +388,11 @@ int choice;
     break;
 
                     case 11:
-    System.out.print("Enter pickup location: ");
-    String sharedLocation = input.nextLine();
+    System.out.print("Enter shared ride ID: ");
+int sharedRideId = Integer.parseInt(input.nextLine());
 
-    LinkedList<IRider> participants =
-            system.getSharedRideParticipants(sharedLocation);
-
+LinkedList<IRider> participants =
+        system.getSharedRideParticipants(sharedRideId);
     if (participants == null || participants.empty()) {
         System.out.println("No participants found.");
     } else {
@@ -474,6 +473,14 @@ try {
     System.out.println("Invalid date: " + e.getMessage());
     break; 
 }
+ITimeSlot timeSlot;
+
+try {
+    timeSlot = new TimeSlot(pickupTime, dropoffTime);
+} catch (IllegalArgumentException e) {
+    System.out.println("Invalid time slot.");
+    break;
+}
         System.out.print("Enter driver ID: ");
         int driverId = input.nextInt();
 
@@ -484,9 +491,9 @@ try {
             System.out.print("Enter rider ID: ");
             int riderId = input.nextInt();
 
-            success = system.schedulePrivateRide(
-                    pickup, pickupTime, dropoffTime,
-                    dropoff, riderId, driverId);
+           success = system.schedulePrivateRide(
+        pickup, dropoff, timeSlot,
+        riderId, driverId) != -1;
 
         } else {
 
@@ -502,8 +509,8 @@ try {
                 }
 
                 success = system.scheduleSharedRide(
-                        pickup, pickupTime, dropoffTime,
-                        dropoff, riderIds, driverId);
+        pickup, dropoff, timeSlot,
+        riderIds, driverId) != -1;
             }
         }
 

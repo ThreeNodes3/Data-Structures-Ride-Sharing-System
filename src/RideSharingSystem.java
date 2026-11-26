@@ -7,11 +7,13 @@ public class RideSharingSystem implements IRideSharingSystem {
     private IBST<Integer, IRider> ridersById;
     private IBST<String, IBST<Integer, IRider>> ridersByName;
     private IBST<String, IBST<Integer, IRider>> ridersByHomeCity;
-    private IRideList rides;
     private int nextRideId;
     private IBST<Integer, IDriver> driversById;
     private IBST<String, IDriver> driversByPlate;
     private IBST<VehicleType, IBST<Integer, IDriver>> driversByVehicleType;
+    private IBST<Integer, IRide> ridesById;
+private IBST<String, IBST<Integer, IRide>> ridesByPickupLocation;
+private IBST<IDateTime, IBST<Integer, IRide>> ridesByPickupTime;
 
     public RideSharingSystem() {
         ridersById = new BST<Integer, IRider>();
@@ -21,223 +23,410 @@ public class RideSharingSystem implements IRideSharingSystem {
 
         ridersByHomeCity = new BST<String,
                 IBST<Integer, IRider>>();
-        rides = new RideList();
         nextRideId = 1;
         driversById = new BST<Integer, IDriver>();
         driversByPlate = new BST<String, IDriver>();
         driversByVehicleType = new BST<VehicleType, IBST<Integer, IDriver>>();
+        ridesById = new BST<Integer, IRide>();
+ridesByPickupLocation = new BST<String, IBST<Integer, IRide>>();
+ridesByPickupTime = new BST<IDateTime, IBST<Integer, IRide>>();
     }
 
     @Override
-    public LinkedList<IRide> getAllRidesAlphabetically() {
-        return rides.getAllAlphabetically();
+public LinkedList<IRide> getAllRidesAlphabetically() {
+
+    LinkedList<IRide> result = new LinkedList<IRide>();
+
+    LinkedList<IBST<Integer, IRide>> locations =
+            ridesByPickupLocation.inOrder();
+
+    if (locations.empty()) {
+        return result;
     }
 
-    @Override
-    public LinkedList<IRide> searchRidesByPickupLocation(String pickupLocation) {
-        return rides.findByPickupLocation(pickupLocation);
+    locations.findFirst();
+
+    while (true) {
+
+        LinkedList<IRide> locationRides =
+                locations.retrieve().inOrder();
+
+        if (!locationRides.empty()) {
+
+            locationRides.findFirst();
+
+            while (true) {
+
+                result.insert(locationRides.retrieve());
+
+                if (locationRides.last()) {
+                    break;
+                }
+
+                locationRides.findNext();
+            }
+        }
+
+        if (locations.last()) {
+            break;
+        }
+
+        locations.findNext();
     }
 
-    @Override
-    public LinkedList<IRide> searchRidesByRiderName(String riderName) {
-        return rides.findByRiderName(riderName);
+    return result;
+}
+
+   @Override
+public LinkedList<IRide> searchRidesByPickupLocation(String pickupLocation) {
+
+    if (pickupLocation == null ||
+            !ridesByPickupLocation.findKey(pickupLocation)) {
+        return new LinkedList<IRide>();
     }
 
+    return ridesByPickupLocation.retrieve().inOrder();
+}
+
     @Override
-    public LinkedList<IRider> getSharedRideParticipants(String pickupLocation) {
+public LinkedList<IRide> searchRidesByRiderName(String riderName) {
 
-        LinkedList<IRider> result = new LinkedList<IRider>();
-        LinkedList<IRide> matchingRides =
-                rides.findByPickupLocation(pickupLocation);
+    IBST<Integer, IRide> sortedRides =
+            new BST<Integer, IRide>();
 
-        if (matchingRides.empty()) {
+    if (riderName == null) {
+        return new LinkedList<IRide>();
+    }
+
+    LinkedList<IRider> matchingRiders =
+            searchRidersByName(riderName);
+
+    if (matchingRiders.empty()) {
+        return new LinkedList<IRide>();
+    }
+
+    matchingRiders.findFirst();
+
+    while (true) {
+
+        IRider rider = matchingRiders.retrieve();
+
+        LinkedList<IRide> riderRides =
+                rider.getSchedule().inOrder();
+
+        if (!riderRides.empty()) {
+
+            riderRides.findFirst();
+
+            while (true) {
+
+                IRide ride = riderRides.retrieve();
+
+                sortedRides.insert(ride.getRideId(), ride);
+
+                if (riderRides.last()) {
+                    break;
+                }
+
+                riderRides.findNext();
+            }
+        }
+
+        if (matchingRiders.last()) {
+            break;
+        }
+
+        matchingRiders.findNext();
+    }
+
+    return sortedRides.inOrder();
+}
+
+    @Override
+public LinkedList<IRider> getSharedRideParticipants(int rideId) {
+
+    if (!ridesById.findKey(rideId)) {
+        return new LinkedList<IRider>();
+    }
+
+    IRide ride = ridesById.retrieve();
+
+    if (!(ride instanceof ISharedRide)) {
+        return new LinkedList<IRider>();
+    }
+
+    return ((ISharedRide) ride).getParticipants();
+}
+
+    
+
+    @Override
+public int schedulePrivateRide(String pickupLocation,
+                               String dropoffLocation,
+                               ITimeSlot timeSlot,
+                               int riderId, int driverId) {
+
+    IRider rider = searchRiderById(riderId);
+    IDriver driver = searchDriverById(driverId);
+
+    if (rider == null || driver == null
+            || timeSlot == null
+            || pickupLocation == null
+            || dropoffLocation == null) {
+        return -1;
+    }
+
+    if (rider.getSchedule().findKey(timeSlot)
+            || driver.getSchedule().findKey(timeSlot)) {
+        return -1;
+    }
+
+    PrivateRide newRide = new PrivateRide(
+            nextRideId,
+            pickupLocation,
+            dropoffLocation,
+            timeSlot,
+            driver,
+            rider
+    );
+
+    addRideToIndexes(newRide);
+
+    rider.getSchedule().insert(timeSlot, newRide);
+    driver.getSchedule().insert(timeSlot, newRide);
+
+    return nextRideId++;
+}
+
+    @Override
+public int scheduleSharedRide(String pickupLocation,
+                              String dropoffLocation,
+                              ITimeSlot timeSlot,
+                              int[] riderIds, int driverId) {
+
+    IDriver driver = searchDriverById(driverId);
+
+    if (driver == null || riderIds == null
+            || riderIds.length < 2
+            || timeSlot == null
+            || pickupLocation == null
+            || dropoffLocation == null) {
+        return -1;
+    }
+
+    if (driver.getSchedule().findKey(timeSlot)) {
+        return -1;
+    }
+
+    SharedRide newRide = new SharedRide(
+            nextRideId,
+            pickupLocation,
+            dropoffLocation,
+            timeSlot,
+            driver
+    );
+
+    for (int riderId : riderIds) {
+
+        IRider rider = searchRiderById(riderId);
+
+        if (rider == null ||
+                rider.getSchedule().findKey(timeSlot)) {
+            return -1;
+        }
+
+        if (!newRide.addParticipant(rider)) {
+            return -1;
+        }
+    }
+
+    addRideToIndexes(newRide);
+
+    driver.getSchedule().insert(timeSlot, newRide);
+
+    for (int riderId : riderIds) {
+        IRider rider = searchRiderById(riderId);
+        rider.getSchedule().insert(timeSlot, newRide);
+    }
+
+    return nextRideId++;
+}
+private void addRideToIndexes(IRide ride) {
+
+    int id = ride.getRideId();
+    String location = ride.getPickupLocation();
+    IDateTime time = ride.getTimeSlot().getStart();
+
+    ridesById.insert(id, ride);
+
+    if (!ridesByPickupLocation.findKey(location)) {
+        ridesByPickupLocation.insert(location,
+                new BST<Integer, IRide>());
+    }
+
+    ridesByPickupLocation.findKey(location);
+    ridesByPickupLocation.retrieve().insert(id, ride);
+
+    if (!ridesByPickupTime.findKey(time)) {
+        ridesByPickupTime.insert(time,
+                new BST<Integer, IRide>());
+    }
+
+    ridesByPickupTime.findKey(time);
+    ridesByPickupTime.retrieve().insert(id, ride);
+}
+private void removeRideFromIndexes(IRide ride) {
+
+    int id = ride.getRideId();
+    String location = ride.getPickupLocation();
+    IDateTime time = ride.getTimeSlot().getStart();
+
+    ridesById.removeKey(id);
+
+    if (ridesByPickupLocation.findKey(location)) {
+
+        IBST<Integer, IRide> inner =
+                ridesByPickupLocation.retrieve();
+
+        inner.removeKey(id);
+
+        if (inner.empty()) {
+            ridesByPickupLocation.removeKey(location);
+        }
+    }
+
+    if (ridesByPickupTime.findKey(time)) {
+
+        IBST<Integer, IRide> inner =
+                ridesByPickupTime.retrieve();
+
+        inner.removeKey(id);
+
+        if (inner.empty()) {
+            ridesByPickupTime.removeKey(time);
+        }
+    }
+}
+@Override
+public boolean cancelRide(int rideId) {
+
+    if (!ridesById.findKey(rideId)) {
+        return false;
+    }
+
+    IRide ride = ridesById.retrieve();
+    ITimeSlot timeSlot = ride.getTimeSlot();
+
+    ride.getDriver().getSchedule().removeKey(timeSlot);
+
+    if (ride instanceof IPrivateRide) {
+
+        IRider rider = ((IPrivateRide) ride).getRider();
+
+        rider.getSchedule().removeKey(timeSlot);
+
+    } else if (ride instanceof ISharedRide) {
+
+        LinkedList<IRider> participants =
+                ((ISharedRide) ride).getParticipants();
+
+        if (!participants.empty()) {
+
+            participants.findFirst();
+
+            while (true) {
+
+                participants.retrieve()
+                        .getSchedule().removeKey(timeSlot);
+
+                if (participants.last()) {
+                    break;
+                }
+
+                participants.findNext();
+            }
+        }
+    }
+
+    removeRideFromIndexes(ride);
+
+    return true;
+}
+@Override
+    public LinkedList<IRide> searchRidesByPickupTimeRange(
+            IDateTime from, IDateTime to) {
+
+        LinkedList<IRide> result = new LinkedList<IRide>();
+
+        if (from == null || to == null || from.compareTo(to) > 0) {
             return result;
         }
 
-        matchingRides.findFirst();
+        LinkedList<IBST<Integer, IRide>> times =
+                ridesByPickupTime.rangeSearch(from, to);
+
+        if (times.empty()) {
+            return result;
+        }
+
+        times.findFirst();
 
         while (true) {
 
-            IRide ride = matchingRides.retrieve();
+            LinkedList<IRide> timeRides =
+                    times.retrieve().inOrder();
 
-            if (ride instanceof ISharedRide) {
-                return ((ISharedRide) ride).getParticipants();
+            if (!timeRides.empty()) {
+
+                timeRides.findFirst();
+
+                while (true) {
+
+                    result.insert(timeRides.retrieve());
+
+                    if (timeRides.last()) {
+                        break;
+                    }
+
+                    timeRides.findNext();
+                }
             }
 
-            if (matchingRides.last()) {
+            if (times.last()) {
                 break;
             }
 
-            matchingRides.findNext();
+            times.findNext();
         }
 
         return result;
     }
-
-    private boolean isOverlap(IDateTime pickupTime,
-                              IDateTime dropoffTime,
-                              IRide ride) {
-
-        return pickupTime.compareTo(ride.getDropoffTime()) < 0
-                && ride.getPickupTime().compareTo(dropoffTime) < 0;
-    }
-
-    private boolean hasConflict(IDateTime pickupTime,
-                                IDateTime dropoffTime,
-                                int[] riderIds,
-                                int driverId) {
-
-        LinkedList<IRide> allRides = rides.getAllAlphabetically();
-
-        if (allRides.empty()) {
-            return false;
-        }
-
-        allRides.findFirst();
-
-        while (true) {
-
-            IRide ride = allRides.retrieve();
-
-            if (isOverlap(pickupTime, dropoffTime, ride)) {
-
-                if (ride.getDriver().getId() == driverId) {
-                    return true;
-                }
-
-                for (int riderId : riderIds) {
-                    if (ride.hasRider(riderId)) {
-                        return true;
-                    }
-                }
-            }
-
-            if (allRides.last()) {
-                break;
-            }
-
-            allRides.findNext();
-        }
-
-        return false;
-    }
-
     @Override
-    public boolean schedulePrivateRide(String pickupLocation, IDateTime pickupTime, IDateTime dropoffTime, String dropoffLocation, int riderId, int driverId) {
+public int loadRidesFromCSV(String ridesFilePath) {
 
-        IRider rider = searchRiderById(riderId);
-        IDriver driver = searchDriverById(driverId);
+    int count = 0;
 
-        if (rider == null || driver == null
-                || pickupTime == null || dropoffTime == null) {
-            return false;
-        }
+    try (BufferedReader reader =
+            new BufferedReader(new FileReader(ridesFilePath))) {
 
-        if (pickupTime.compareTo(dropoffTime) >= 0) {
-            return false;
-        }
+        String line;
 
-        int[] riderIds = {riderId};
+        while ((line = reader.readLine()) != null) {
 
-        if (hasConflict(pickupTime, dropoffTime, riderIds, driverId)) {
-            return false;
-        }
-
-        PrivateRide newRide = new PrivateRide(
-                nextRideId,
-                pickupLocation,
-                pickupTime,
-                dropoffTime,
-                dropoffLocation,
-                driver,
-                rider
-        );
-
-        if (rides.addRide(newRide)) {
-            nextRideId++;
-            return true;
-        }
-
-        return false;
-    }
-
-    @Override
-    public boolean scheduleSharedRide(String pickupLocation, IDateTime pickupTime, IDateTime dropoffTime, String dropoffLocation, int[] riderIds, int driverId) {
-
-        IDriver driver = searchDriverById(driverId);
-
-        if (driver == null || riderIds == null || riderIds.length < 2 || pickupTime == null || dropoffTime == null) {
-            return false;
-        }
-
-        if (pickupTime.compareTo(dropoffTime) >= 0) {
-            return false;
-        }
-
-        for (int i = 0; i < riderIds.length; i++) {
-
-            if (searchRiderById(riderIds[i]) == null) {
-                return false;
+            if (line.trim().isEmpty()) {
+                continue;
             }
 
-            for (int j = 0; j < i; j++) {
-
-                if (riderIds[i] == riderIds[j]) {
-                    return false;
-                }
-            }
-        }
-
-        if (hasConflict(pickupTime, dropoffTime, riderIds, driverId)) {
-            return false;
-        }
-
-        SharedRide newRide = new SharedRide(
-                nextRideId,
-                pickupLocation,
-                pickupTime,
-                dropoffTime,
-                dropoffLocation,
-                driver
-        );
-
-        for (int riderId : riderIds) {
-
-            if (!newRide.addParticipant(searchRiderById(riderId))) {
-                return false;
-            }
-        }
-
-        if (rides.addRide(newRide)) {
-            nextRideId++;
-            return true;
-        }
-
-        return false;
-    }
-
-    @Override
-    public boolean loadRidesFromCSV(String ridesFilePath) {
-
-        try (BufferedReader reader =
-                     new BufferedReader(new FileReader(ridesFilePath))) {
-
-            String line;
-
-            while ((line = reader.readLine()) != null) {
-
-                if (line.trim().isEmpty()) {
-                    continue;
-                }
-
-                String[] data = line.split(",");
+            try {
+                String[] data = line.split(",", -1);
 
                 if (data.length != 7) {
-                    return false;
+                    continue;
                 }
 
                 String type = data[0].trim();
                 String pickupLocation = data[1].trim();
+
                 IDateTime pickupTime =
                         parseRideDateTime(data[2].trim());
 
@@ -245,62 +434,69 @@ public class RideSharingSystem implements IRideSharingSystem {
                         parseRideDateTime(data[3].trim());
 
                 String dropoffLocation = data[4].trim();
+
                 int driverId =
                         Integer.parseInt(data[5].trim());
 
-                boolean success;
+                ITimeSlot timeSlot =
+                        new TimeSlot(pickupTime, dropoffTime);
+
+                int rideId;
 
                 if (type.equalsIgnoreCase("PRIVATE")) {
 
                     int riderId =
                             Integer.parseInt(data[6].trim());
 
-                    success = schedulePrivateRide(
+                    rideId = schedulePrivateRide(
                             pickupLocation,
-                            pickupTime,
-                            dropoffTime,
                             dropoffLocation,
+                            timeSlot,
                             riderId,
                             driverId
                     );
 
                 } else if (type.equalsIgnoreCase("SHARED")) {
 
-                    String[] ids =
-                            data[6].trim().split(";");
+                    String[] ids = data[6].trim().split(";", -1);
 
-                    int[] riderIds =
-                            new int[ids.length];
+                    int[] riderIds = new int[ids.length];
 
                     for (int i = 0; i < ids.length; i++) {
                         riderIds[i] =
                                 Integer.parseInt(ids[i].trim());
                     }
 
-                    success = scheduleSharedRide(
+                    rideId = scheduleSharedRide(
                             pickupLocation,
-                            pickupTime,
-                            dropoffTime,
                             dropoffLocation,
+                            timeSlot,
                             riderIds,
                             driverId
                     );
 
                 } else {
-                    return false;
+                    continue;
                 }
 
-                if (!success) {
-                    return false;
+                if (rideId != -1) {
+                    count++;
                 }
+
+            } catch (IllegalArgumentException |
+                     IndexOutOfBoundsException e) {
+                continue;
             }
-
-            return true;
-
-        } catch (Exception e) {
-            return false;
         }
+
+        return count;
+
+    } catch (java.io.FileNotFoundException e) {
+        return -1;
+    } catch (java.io.IOException e) {
+        return count;
     }
+}
 
     private IDateTime parseRideDateTime(String value) {
 

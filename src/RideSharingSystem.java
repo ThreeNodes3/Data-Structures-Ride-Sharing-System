@@ -182,13 +182,13 @@ public int schedulePrivateRide(String pickupLocation,
     }
 
     PrivateRide newRide = new PrivateRide(
-            nextRideId,
-            pickupLocation,
-            dropoffLocation,
-            timeSlot,
-            driver,
-            rider
-    );
+        nextRideId,
+        pickupLocation,
+        dropoffLocation,
+        timeSlot,
+        rider,
+        driver
+);
 
     addRideToIndexes(newRide);
 
@@ -499,7 +499,10 @@ public int loadRidesFromCSV(String ridesFilePath) {
 }
 
     private IDateTime parseRideDateTime(String value) {
-
+if (value == null ||
+        !value.matches("\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}")) {
+    throw new IllegalArgumentException("Invalid date/time format.");
+}
         String[] parts = value.split(" ");
         String[] date = parts[0].split("/");
         String[] time = parts[1].split(":");

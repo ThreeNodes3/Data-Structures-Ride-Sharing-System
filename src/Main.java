@@ -37,7 +37,7 @@ int choice;
                 System.out.println("8. List all rides alphabetically by pickup location");
                 System.out.println("9. Find available drivers");
                 System.out.println("10. Search for rides by rider name");
-                System.out.println("11. List participants of a shared ride by pickup location");
+                System.out.println("11. List participants of a shared ride by ride ID");
                 System.out.println("12. Add a ride");
 
                 System.out.println("0. Exit");
@@ -410,7 +410,7 @@ LinkedList<IRider> participants =
     }
     break;
 
-                    case 12:
+                  case 12:  
     System.out.println("Choose ride type:");
     System.out.println("1. Private Ride");
     System.out.println("2. Shared Ride");
@@ -427,51 +427,21 @@ LinkedList<IRider> participants =
         System.out.print("Enter dropoff location: ");
         String dropoff = input.nextLine();
 
-        System.out.print("Enter pickup year: ");
-        int pickupYear = input.nextInt();
+       System.out.print("Enter pickup date/time (MM/DD/YYYY HH:MM): ");
+String pickupDate = input.nextLine();
 
-        System.out.print("Enter pickup month: ");
-        int pickupMonth = input.nextInt();
+System.out.print("Enter dropoff date/time (MM/DD/YYYY HH:MM): ");
+String dropoffDate = input.nextLine();
 
-        System.out.print("Enter pickup day: ");
-        int pickupDay = input.nextInt();
-
-        System.out.print("Enter pickup hour: ");
-        int pickupHour = input.nextInt();
-
-        System.out.print("Enter pickup minute: ");
-        int pickupMinute = input.nextInt();
-
-        System.out.print("Enter dropoff year: ");
-        int dropoffYear = input.nextInt();
-
-        System.out.print("Enter dropoff month: ");
-        int dropoffMonth = input.nextInt();
-
-        System.out.print("Enter dropoff day: ");
-        int dropoffDay = input.nextInt();
-
-        System.out.print("Enter dropoff hour: ");
-        int dropoffHour = input.nextInt();
-
-        System.out.print("Enter dropoff minute: ");
-        int dropoffMinute = input.nextInt();
-
-        IDateTime pickupTime;
+IDateTime pickupTime;
 IDateTime dropoffTime;
 
 try {
-    pickupTime = new DateTime(
-            pickupYear, pickupMonth, pickupDay,
-            pickupHour, pickupMinute);
-
-    dropoffTime = new DateTime(
-            dropoffYear, dropoffMonth, dropoffDay,
-            dropoffHour, dropoffMinute);
-
+    pickupTime = parseDateTime(pickupDate);
+    dropoffTime = parseDateTime(dropoffDate);
 } catch (IllegalArgumentException e) {
     System.out.println("Invalid date: " + e.getMessage());
-    break; 
+    break;
 }
 ITimeSlot timeSlot;
 
